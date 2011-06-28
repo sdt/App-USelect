@@ -112,6 +112,7 @@ sub _update {
     }
 
     my $curs = $self->_cursor;
+    my $line = $self->selector->line($self->_cursor);
 
     given ($in) {
 
@@ -152,8 +153,8 @@ sub _update {
         }
 
         when (' ') {
-            if ($self->selector->can_select($curs)) {
-                $self->selector->toggle_selection($curs);
+            if ($line->can_select) {
+                $line->is_selected(not $line->is_selected);
             }
             $self->_redraw;
         }
@@ -174,16 +175,15 @@ sub _redraw {
                          $slr->line_count - $self->_first_line);
 
     for my $y (0 .. $line_count - 1) {
-        my $line = $y + $self->_first_line;
-        my $text = $slr->get_line($line);
-        my $can_select = $slr->can_select($line);
-        my $attr = ($line == $self->_cursor) ? COLOR_PAIR(3)
-                 : $can_select ? COLOR_PAIR(1) : 0;
-        my $prefix = $can_select ?
-                     $slr->is_selected($line) ?
+        my $line_no = $y + $self->_first_line;
+        my $line = $slr->line($y + $self->_first_line);
+        my $attr = ($line_no == $self->_cursor) ? COLOR_PAIR(3)
+                 : $line->can_select ? COLOR_PAIR(1) : 0;
+        my $prefix = $line->can_select ?
+                     $line->is_selected ?
                      '# ' : '. ' : '  ';
                      #'[*] ' : '[ ] ' : '    ';
-        $self->print_line(0, $y, $attr, $prefix . $text);
+        $self->print_line(0, $y, $attr, $prefix . $line->text);
     }
     $self->_draw_status_line;
     #$self->window->move($self->_width, $self->_height);
