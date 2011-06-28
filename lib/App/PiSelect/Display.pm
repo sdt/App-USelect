@@ -180,7 +180,7 @@ sub _redraw {
         my $attr = ($line == $self->_cursor) ? COLOR_PAIR(3)
                  : $can_select ? COLOR_PAIR(1) : 0;
         my $prefix = $can_select ?
-                     $slr->selected($line) ?
+                     $slr->is_selected($line) ?
                      '# ' : '. ' : '  ';
                      #'[*] ' : '[ ] ' : '    ';
         $self->print_line(0, $y, $attr, $prefix . $text);
