@@ -17,14 +17,11 @@ sub selectable {
 }
 
 my $selector = App::PiSelect::Selector->new(
-        lines           => \@lines,
-        is_selectable   => \&selectable
+        text          => \@lines,
+        is_selectable => \&selectable
     );
 
-my $display  = App::PiSelect::Display->new(
-        selector =>
-    $selector);
-
+my $display = App::PiSelect::Display->new(selector => $selector);
 $display->run;
 
 print {$stdout} $selector->selection;

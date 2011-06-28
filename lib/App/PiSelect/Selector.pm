@@ -1,5 +1,6 @@
 package App::PiSelect::Selector::Line;
 use Moose;
+use Modern::Perl;
 
 has text => (
     is          => 'ro',
@@ -20,77 +21,60 @@ has is_selected => (
 );
 
 package App::PiSelect::Selector;
+use Moose;
 use Modern::Perl;
 
-use Params::Validate (qw/ validate :types /);
+has _text => (
+    is          => 'ro',
+    isa         => 'ArrayRef[Str]',
+    required    => 1,
+    init_arg    => 'text',
+);
 
-sub new {
-    my $class = shift;
-    my %args = validate(@_, {
-            lines => {
-                type => ARRAYREF,
-            },
-            is_selectable => {
-                type => CODEREF,
-            },
-        });
+has is_selectable => (
+    is          => 'ro',
+    isa         => 'CodeRef',
+    required    => 1,
+);
 
-    my $self = {
-        lines => [ map {
-                        App::PiSelect::Selector::Line->new(
-                            text       => $_,
-                            can_select => $args{is_selectable}->($_),
-                        )
-                  } @{ $args{lines} } ],
-    };
-    bless($self, $class);
-    return $self;
-}
+has lines => (
+    is          => 'ro',
+    isa         => 'ArrayRef[App::PiSelect::Selector::Line]',
+    init_arg    => undef,
+    lazy        => 1,
+    builder     => '_build_lines',
+    traits      => ['Array'],
+    handles     => {
+        line        => 'get',
+        line_count  => 'count',
+        grep        => 'grep',
+    },
+);
 
-sub line {
-    my ($self, $line_no) = @_;
-    croak('Line ' . $line_no . ' out of range')
-        if ($line_no < 0) or ($line_no >= scalar @{ $self->{lines} });
-    return $self->{lines}->[$line_no];
+sub _build_lines {
+    my ($self) = @_;
+    my $build_line = sub {
+        return App::PiSelect::Selector::Line->new(
+                text       => $_[0],
+                can_select => $self->is_selectable->($_[0])
+            )
+        };
+    return [ map { $build_line->($_) } @{ $self->_text } ];
 }
 
 sub selection {
     my ($self) = @_;
-    return map { $_->text }
-            grep { $_->is_selected }
-             @{ $self->{lines} };
-}
-
-sub _get_line {
-    my ($self, $line_no) = @_;
-    croak('Line ' . $line_no . ' out of range')
-        if ($line_no < 0) or ($line_no >= scalar @{ $self->{lines} });
-    return $self->{lines}->[$line_no];
-}
-
-sub selectable_count {
-    my ($self) = @_;
-    return scalar grep { $_->can_select } @{ $self->{lines} };
-}
-
-sub selected_count {
-    my ($self) = @_;
-    return scalar grep { $_->is_selected } @{ $self->{lines} };
+    return map { $_->text } $self->grep(sub { $_->is_selected });
 }
 
 sub next_selectable {
     my ($self, $line_no, $dir) = @_;
-    my $line_count = scalar @{ $self->{lines} };
+    my $line_count = $self->line_count;
 
     for (my $i = $line_no + $dir; ($i >= 0) and ($i < $line_count); $i += $dir) {
-        return $i if $self->{lines}->[$i]->can_select;
+        return $i if $self->line($i)->can_select;
     }
     return $line_no;
-}
-
-sub line_count {
-    my ($self) = @_;
-    return scalar @{ $self->{lines} };
 }
 
 1;

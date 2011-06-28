@@ -81,7 +81,6 @@ sub BUILD {
     noecho;
     raw;
     $self->window->keypad(1);
-    $self->_on_resize;
     curs_set(0);
 }
 
@@ -97,6 +96,7 @@ sub print_line {
 sub run {
     my ($self) = shift;
 
+    $self->_on_resize;
     while ($self->_update) { }
     endwin;
 }
@@ -196,9 +196,11 @@ sub _draw_status_line {
     my $attr = COLOR_PAIR(2);
     my $slr = $self->selector;
 
-    my $lhs = ($slr->selectable_count > 0)
-            ? 'Selected ' . $slr->selected_count .
-                ' of ' . $slr->selectable_count
+    my $selectable = $slr->grep(sub { $_->can_select  });
+    my $selected   = $slr->grep(sub { $_->is_selected });
+
+    my $lhs = ($selectable > 0)
+            ? "Selected $selected of $selectable"
             : 'No lines selectable';
 
     my $rhs = $self->_debug_msg;
