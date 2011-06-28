@@ -1,7 +1,7 @@
 use inc::Module::Install;
 
 name     'App-USelect';
-all_from 'lib/App/USelect.pm';
+all_from 'bin/uselect';
 author   q{Stephen Thirlwall <sdt@dr.com>};
 license  'perl';
 
