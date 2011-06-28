@@ -203,9 +203,9 @@ sub _draw_status_line {
 
     my $rhs = $self->_debug_msg;
     my $len = length($lhs) + length($rhs);
-    my $msg = $lhs . (' ' x (($self->_width - $len)/2)) . $rhs;
+    my $msg = $lhs . (' ' x ($self->_width - $len - 1)) . $rhs;
 
-    $self->print_line(0, $y, $attr, "$rhs $lhs");
+    $self->print_line(0, $y, $attr, $msg);
 }
 
 sub _on_resize {
@@ -239,7 +239,7 @@ sub _scroll_to_bottom {
 
     my $slr = $self->selector;
     $self->_cursor($slr->next_selectable($slr->line_count, -1));
-    $self->_first_line(max(0, $slr->line_count - $self->_height));
+    $self->_first_line(max(0, $slr->line_count - $self->_height + 1));
     $self->_redraw;
 }
 

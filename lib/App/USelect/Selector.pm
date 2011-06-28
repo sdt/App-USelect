@@ -71,7 +71,7 @@ sub next_selectable {
     my ($self, $line_no, $dir) = @_;
     my $line_count = $self->line_count;
 
-    for (my $i = $line_no + $dir; ($i >= 0) and ($i < $line_count); $i += $dir) {
+    for (my $i = $line_no + $dir; ($i >= 0) && ($i < $line_count); $i += $dir) {
         return $i if $self->line($i)->can_select;
     }
     return $line_no;
