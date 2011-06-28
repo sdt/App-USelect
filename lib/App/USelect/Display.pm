@@ -2,10 +2,11 @@ package App::USelect::Display;
 use Moose;
 #use namespace::autoclean;
 
+BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
+
 use Modern::Perl;
 use Curses;
 use List::Util  qw/ min max /;
-use Scalar::Util qw/ looks_like_number /;
 
 use App::USelect::Selector;
 
@@ -42,31 +43,41 @@ has _height => (
     isa     => 'Int',
 );
 
-has key_exit => (
-    is      => 'rw',
-    default => 'q',
-);
-
-has key_up => (
-    is      => 'rw',
-    default => KEY_UP,
-);
-
-has key_down => (
-    is      => 'rw',
-    default => KEY_DOWN,
-);
-
-has key_toggle_selection => (
-    is      => 'rw',
-    default => ' ',
-);
-
 has _debug_msg => (
     is      => 'rw',
     isa     => 'Str',
     default => '',
 );
+
+has key_action_table => (
+    is       => 'ro',
+    isa      => 'HashRef',
+    init_arg => undef,
+    builder  => '_build_key_action_table',
+    lazy     => 1,
+);
+
+sub _build_key_action_table {
+    my ($self) = @_;
+
+    my $esc     = chr(27);
+    my $newline = "\n";
+    my %kt = (
+        $newline            => \&_action_quit,
+        $esc                => \&_action_abort,
+        Curses::KEY_RESIZE  => \&_action_resize,
+        k                   => \&_action_cursor_up,
+        Curses::KEY_UP      => \&_action_cursor_up,
+        j                   => \&_action_cursor_down,
+        Curses::KEY_DOWN    => \&_action_cursor_down,
+        g                   => \&_action_cursor_top,
+        G                   => \&_action_cursor_bottom,
+        ' '                 => \&_action_toggle_selection,
+        a                   => \&_action_select_all,
+        '*'                 => \&_action_select_all,
+    );
+    return \%kt;
+}
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -77,7 +88,7 @@ sub BUILD {
     init_pair(3, COLOR_WHITE,  COLOR_RED);
     init_pair(4, COLOR_GREEN,  COLOR_BLACK);
     noecho;
-    raw;
+    cbreak;
     $self->window->keypad(1);
     curs_set(0);
 }
@@ -103,66 +114,12 @@ sub _update {
     my ($self) = @_;
 
     my $in = $self->window->getch;
+    my $handler = $self->key_action_table->{$in};
 
-    when ($in eq KEY_RESIZE) {
-       $self->_on_resize;
-       return 1;
-    }
+    return $handler->($self) if $handler;
 
-    my $curs = $self->_cursor;
-    my $line = $self->selector->line($self->_cursor);
-
-    given ($in) {
-
-        when ('q') {
-            return;
-        }
-
-        when ('k') {
-            my $new_curs = $self->selector->next_selectable($curs, -1);
-            if ($curs == $new_curs) {
-                $self->_scroll_to_top;
-            }
-            else {
-                $self->_cursor($new_curs);
-            }
-            $self->_on_resize;
-        }
-
-        when ('j') {
-            my $new_curs = $self->selector->next_selectable($curs, +1);
-            if ($curs == $new_curs) {
-                $self->_scroll_to_bottom;
-            }
-            else {
-                $self->_cursor($new_curs);
-            }
-            $self->_on_resize;
-        }
-
-        when ('g') {
-            $self->_scroll_to_top;
-            $self->_on_resize;
-        }
-
-        when ('G') {
-            $self->_scroll_to_bottom;
-            $self->_on_resize;
-        }
-
-        when (' ') {
-            if ($line->can_select) {
-                $line->is_selected(not $line->is_selected);
-            }
-            $self->_redraw;
-        }
-
-        default {
-            $self->_debug_msg("$in");
-            $self->_redraw;
-        }
-
-    }
+    $self->_debug_msg("$in");
+    $self->_redraw;
     return 1;
 }
 
@@ -243,6 +200,88 @@ sub _scroll_to_bottom {
     $self->_redraw;
 }
 
+sub _action_quit { return }
+
+sub _action_abort {
+    my ($self) = @_;
+
+    $self->selector->select_all(0);
+    return;
+}
+
+sub _action_resize {
+    my ($self) = @_;
+
+    $self->_on_resize;
+    return 1;
+}
+
+sub _action_cursor_up {
+    my ($self) = @_;
+
+    my $curs = $self->_cursor;
+    my $new_curs = $self->selector->next_selectable($curs, -1);
+
+    if ($curs == $new_curs) {
+        $self->_scroll_to_top;
+    }
+    else {
+        $self->_cursor($new_curs);
+    }
+    $self->_on_resize;
+    return 1;
+}
+
+sub _action_cursor_down {
+    my ($self) = @_;
+
+    my $curs = $self->_cursor;
+    my $new_curs = $self->selector->next_selectable($curs, 1);
+
+    if ($curs == $new_curs) {
+        $self->_scroll_to_bottom;
+    }
+    else {
+        $self->_cursor($new_curs);
+    }
+    $self->_on_resize;
+    return 1;
+}
+
+sub _action_cursor_top {
+    my ($self) = @_;
+
+    $self->_scroll_to_top;
+    $self->_on_resize;
+    return 1;
+}
+
+sub _action_cursor_bottom {
+    my ($self) = @_;
+
+    $self->_scroll_to_bottom;
+    $self->_on_resize;
+    return 1;
+}
+
+sub _action_toggle_selection {
+    my ($self) = @_;
+
+    my $line = $self->selector->line($self->_cursor);
+    if ($line->can_select) {
+        $line->is_selected(not $line->is_selected);
+    }
+    $self->_redraw;
+    return 1;
+}
+
+sub _action_select_all {
+    my ($self) = @_;
+
+    $self->selector->select_all(1);
+    $self->_redraw;
+    return 1;
+}
 
 #__PACKAGE__->meta->make_immutable;
 1;

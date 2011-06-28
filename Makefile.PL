@@ -12,7 +12,6 @@ requires        'Curses';
 requires        'List::Util';
 requires        'Modern::Perl';
 requires        'Moose';
-requires        'Scalar::Util';
 
 auto_install;
 

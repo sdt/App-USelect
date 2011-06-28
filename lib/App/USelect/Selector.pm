@@ -77,4 +77,12 @@ sub next_selectable {
     return $line_no;
 }
 
+sub select_all {
+    my ($self, $is_selected) = @_;
+
+    for my $line ($self->grep( sub { $_->can_select } )) {
+        $line->is_selected($is_selected);
+    }
+}
+
 1;
