@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+
+use Modern::Perl;
+use App::PiSelect::Selector;
+use App::PiSelect::Display;
+use autodie;
+
+my @lines = <STDIN>;
+open(STDIN, '<', '/dev/tty');
+open my $stdout, '>&STDOUT';
+open(STDOUT, '>', '/dev/tty');
+
+sub selectable {
+    my ($line) = @_;
+    chomp $line;
+    return ($line and not $line =~ /^\d+:/);
+}
+
+my $selector = App::PiSelect::Selector->new(
+        lines           => \@lines,
+        is_selectable   => \&selectable
+    );
+
+my $display  = App::PiSelect::Display->new(
+        selector =>
+    $selector);
+
+$display->run;
+
+print {$stdout} $selector->selection;
