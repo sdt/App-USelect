@@ -1,4 +1,4 @@
-package App::PiSelect::Display;
+package App::USelect::Display;
 use Moose;
 #use namespace::autoclean;
 
@@ -7,11 +7,11 @@ use Curses;
 use List::Util  qw/ min max /;
 use Scalar::Util qw/ looks_like_number /;
 
-use App::PiSelect::Selector;
+use App::USelect::Selector;
 
 has selector => (
     is      => 'ro',
-    isa     => 'App::PiSelect::Selector',
+    isa     => 'App::USelect::Selector',
 );
 
 has _first_line => (
@@ -67,8 +67,6 @@ has _debug_msg => (
     isa     => 'Str',
     default => '',
 );
-
-open my $log, '>', '/tmp/piselect.out';
 
 sub BUILD {
     my ($self, $args) = @_;

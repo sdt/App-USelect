@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
 use Modern::Perl;
-use App::PiSelect::Selector;
-use App::PiSelect::Display;
+use App::USelect::Selector;
+use App::USelect::Display;
 use autodie;
 
 my @lines = <STDIN>;
@@ -16,12 +16,12 @@ sub selectable {
     return ($line and not $line =~ /^\d+:/);
 }
 
-my $selector = App::PiSelect::Selector->new(
+my $selector = App::USelect::Selector->new(
         text          => \@lines,
         is_selectable => \&selectable
     );
 
-my $display = App::PiSelect::Display->new(selector => $selector);
+my $display = App::USelect::Display->new(selector => $selector);
 $display->run;
 
 print {$stdout} $selector->selection;

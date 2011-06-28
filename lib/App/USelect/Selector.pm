@@ -1,4 +1,4 @@
-package App::PiSelect::Selector::Line;
+package App::USelect::Selector::Line;
 use Moose;
 use Modern::Perl;
 
@@ -20,7 +20,7 @@ has is_selected => (
     default     => 0,
 );
 
-package App::PiSelect::Selector;
+package App::USelect::Selector;
 use Moose;
 use Modern::Perl;
 
@@ -39,7 +39,7 @@ has is_selectable => (
 
 has lines => (
     is          => 'ro',
-    isa         => 'ArrayRef[App::PiSelect::Selector::Line]',
+    isa         => 'ArrayRef[App::USelect::Selector::Line]',
     init_arg    => undef,
     lazy        => 1,
     builder     => '_build_lines',
@@ -54,7 +54,7 @@ has lines => (
 sub _build_lines {
     my ($self) = @_;
     my $build_line = sub {
-        return App::PiSelect::Selector::Line->new(
+        return App::USelect::Selector::Line->new(
                 text       => $_[0],
                 can_select => $self->is_selectable->($_[0])
             )

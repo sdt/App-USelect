@@ -49,7 +49,7 @@ TODO: {
     "placeholder date/time"       => qr(Date/time)
   );
 
-  module_boilerplate_ok('lib/App/PiSelect.pm');
+  module_boilerplate_ok('lib/App/USelect.pm');
 
 
 }

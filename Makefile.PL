@@ -1,7 +1,7 @@
 use inc::Module::Install;
 
-name     'App-PiSelect';
-all_from 'lib/App/PiSelect.pm';
+name     'App-USelect';
+all_from 'lib/App/USelect.pm';
 author   q{Stephen Thirlwall <sdt@dr.com>};
 license  'perl';
 
