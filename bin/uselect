@@ -1,27 +1,63 @@
 #!/usr/bin/env perl
 
+use version; our $VERSION = qv('2011.06.28');
+
 use Modern::Perl;
 use App::USelect::Selector;
 use App::USelect::Display;
+use Getopt::Long;
 use autodie;
 
-my @lines = <STDIN>;
-open(STDIN, '<', '/dev/tty');
-open my $stdout, '>&STDOUT';
-open(STDOUT, '>', '/dev/tty');
+my $select_code = '1';
 
-sub selectable {
-    my ($line) = @_;
-    chomp $line;
-    return ($line and not $line =~ /^\d+:/);
-}
+process_options();
+
+my $select_func = eval('sub {' . $select_code . '}');
+usage($@) if $@;
+
+my @lines = <STDIN>;
+my $stdout = attach_console();
 
 my $selector = App::USelect::Selector->new(
         text          => \@lines,
-        is_selectable => \&selectable
+        is_selectable => $select_func,
     );
 
 my $display = App::USelect::Display->new(selector => $selector);
 $display->run;
 
-print {$stdout} $selector->selection;
+detach_console($stdout);
+print $selector->selection;
+
+#-------------------------------------------------------------------------------
+
+sub usage {
+    say STDERR "usage: $0 [--select code]";
+    say STDERR for @_;
+    exit 1;
+}
+
+sub attach_console {
+    open(STDIN, '<', '/dev/tty');
+
+    open my $stdout, '>&STDOUT';
+    open(STDOUT, '>', '/dev/tty');
+
+    return $stdout;
+}
+
+sub detach_console {
+    my ($stdout) = @_;
+    open(STDOUT, '>&', $stdout);
+}
+
+sub process_options {
+    my @options_spec = (
+        "select|s=s"    => \$select_code,
+        "version|V"     => sub { say "uselect v$VERSION"; exit 0 },
+    );
+
+    if (not GetOptions(@options_spec)) {
+        usage();
+    }
+}
