@@ -13,6 +13,7 @@ requires        'List::Util';
 requires        'Modern::Perl';
 requires        'Moose';
 
+install_script  'bin/uselect';
 auto_install;
 
 WriteAll;
