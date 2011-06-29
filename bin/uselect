@@ -16,17 +16,23 @@ my $select_func = eval('sub {' . $select_code . '}');
 usage($@) if $@;
 
 my @lines = <STDIN>;
-my $stdout = attach_console();
 
 my $selector = App::USelect::Selector->new(
         text          => \@lines,
         is_selectable => $select_func,
     );
+if (not $selector->grep(sub { $_->can_select  })) {
+    say STDERR 'No selectable lines.';
+    exit 0;
+}
+
+my $stdout = attach_console();
 
 my $display = App::USelect::Display->new(selector => $selector);
 $display->run;
 
 detach_console($stdout);
+
 print $selector->selection;
 
 #-------------------------------------------------------------------------------
