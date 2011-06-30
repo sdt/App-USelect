@@ -1,6 +1,5 @@
 package App::USelect::Selector::Line;
 use Moose;
-use Modern::Perl;
 
 has text => (
     is          => 'ro',
@@ -8,11 +7,16 @@ has text => (
     required    => 1,
 );
 
-has can_select => (
-    is          => 'ro',
-    isa         => 'Bool',
-    required    => 1,
-);
+sub is_selected { 0 }
+
+sub can_select {
+    my ($self) = @_;
+    return $self->can('select');
+}
+
+package App::USelect::Selector::SelectableLine;
+use Moose;
+extends 'App::USelect::Selector::Line';
 
 has is_selected => (
     is          => 'rw',
@@ -60,17 +64,22 @@ has lines => (
 sub _build_lines {
     my ($self) = @_;
     my $build_line = sub {
-        return App::USelect::Selector::Line->new(
-                text       => $_[0],
-                can_select => $self->is_selectable->($_[0])
-            )
-        };
+        my ($text) = @_;
+        return $self->is_selectable->($text)
+                ?  App::USelect::Selector::SelectableLine->new(text => $text)
+                :  App::USelect::Selector::Line->new(text => $text);
+    };
     return [ map { $build_line->($_) } @{ $self->_text } ];
 }
 
-sub selection {
+sub selectable_lines {
     my ($self) = @_;
-    return map { $_->text } $self->grep(sub { $_->is_selected });
+    return $self->grep(sub { $_->can_select });
+}
+
+sub selected_lines {
+    my ($self) = @_;
+    return $self->grep(sub { $_->is_selected });
 }
 
 sub next_selectable {
@@ -81,14 +90,6 @@ sub next_selectable {
         return $i if $self->line($i)->can_select;
     }
     return $line_no;
-}
-
-sub select_all {
-    my ($self, $is_selected) = @_;
-
-    for my $line ($self->grep( sub { $_->can_select } )) {
-        $line->is_selected($is_selected);
-    }
 }
 
 1;

@@ -6,19 +6,36 @@ use Modern::Perl;
 use App::USelect::Selector;
 use App::USelect::Display;
 use Getopt::Long;
+use Try::Tiny;
 use autodie;
 
+# Makes warnings a bit easier to track down
+# use Carp qw/ confess /;
+# $SIG{__WARN__} = sub { confess };
+
+# options
 my $include_blanks = 0;
-my $select_code = '1';
+my $select_code;
 
 process_options();
 
-if (not $include_blanks) {
-    $select_code = '/./ && (' . $select_code . ')';
+if (defined $select_code) {
+    # Try evaluating the user code on its own first - it'll give a better
+    # error message that way, rather than with our extra code added.
+    #local $_ = '';      # silence warnings about $_ being uninitialised
+    my $usercode = eval($select_code);
+    die $@ if ($@)
+}
+else {
+    $select_code = '1';
 }
 
-my $select_func = eval('sub { local $_ = $_[0]; ' . $select_code . '}');
-usage($@) if $@;
+if (not $include_blanks) {
+    $select_code = '/./ and (' . $select_code . ')';
+}
+
+my $select_func = eval('sub { $_ = $_[0]; ' . $select_code . '}');
+usage($@) if $@;    # this may still occur even if the first parse succeeded
 
 chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
 
@@ -26,19 +43,30 @@ my $selector = App::USelect::Selector->new(
         text          => \@lines,
         is_selectable => $select_func,
     );
-if (not $selector->grep(sub { $_->can_select  })) {
+if (not $selector->selectable_lines) {
     say STDERR 'No selectable lines.';
     exit 0;
 }
 
 my $stdout = attach_console();
 
-my $display = App::USelect::Display->new(selector => $selector);
-$display->run;
+my $errors;
+try {
+    my $display = App::USelect::Display->new(selector => $selector);
+    $display->run;
+}
+catch {
+    $errors = $_;
+};
 
 detach_console($stdout);
 
-say for $selector->selection;
+if ($errors) {
+    say STDERR 'ERROR:', $errors;
+    exit 1;
+}
+
+say $_->text for $selector->selected_lines;
 
 #-------------------------------------------------------------------------------
 

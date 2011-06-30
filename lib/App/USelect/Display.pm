@@ -96,6 +96,10 @@ sub BUILD {
     curs_set(0);
 }
 
+sub DEMOLISH {
+    endwin;
+}
+
 sub print_line {
     my ($self, $x, $y, $attr, $str) = @_;
 
@@ -110,7 +114,6 @@ sub run {
 
     $self->_on_resize;
     while ($self->_update) { }
-    endwin;
 }
 
 sub _update {
@@ -136,11 +139,10 @@ sub _redraw {
         my $line_no = $y + $self->_first_line;
         my $line = $slr->line($y + $self->_first_line);
         my $attr = ($line_no == $self->_cursor) ? COLOR_PAIR(3)
-                 : $line->can_select ? COLOR_PAIR(1) : 0;
-        my $prefix = $line->can_select ?
+                 : $line->can('select') ? COLOR_PAIR(1) : 0;
+        my $prefix = $line->can('select') ?
                      $line->is_selected ?
                      '# ' : '. ' : '  ';
-                     #'[*] ' : '[ ] ' : '    ';
         $self->print_line(0, $y, $attr, $prefix . $line->text);
     }
     $self->_draw_status_line;
@@ -152,10 +154,9 @@ sub _draw_status_line {
     my ($self) = @_;
     my $y = $self->_height - 1;
     my $attr = COLOR_PAIR(2);
-    my $slr = $self->selector;
 
-    my $selectable = $slr->grep(sub { $_->can_select  });
-    my $selected   = $slr->grep(sub { $_->is_selected });
+    my $selectable = $self->selector->selectable_lines;
+    my $selected   = $self->selector->selected_lines;
 
     my $lhs = ($selectable > 0)
             ? "Selected $selected of $selectable"
@@ -188,8 +189,7 @@ sub _on_resize {
 sub _scroll_to_top {
     my ($self) = @_;
 
-    my $slr = $self->selector;
-    $self->_cursor($slr->next_selectable(-1, +1));
+    $self->_cursor($self->selector->next_selectable(-1, +1));
     $self->_first_line(0);
     $self->_redraw;
 }
@@ -208,7 +208,7 @@ sub _action_quit { return }
 sub _action_abort {
     my ($self) = @_;
 
-    $self->selector->select_all(0);
+    $_->deselect for $self->selector->selectable_lines;
     return;
 }
 
@@ -270,10 +270,7 @@ sub _action_cursor_bottom {
 sub _action_toggle_selection {
     my ($self) = @_;
 
-    my $line = $self->selector->line($self->_cursor);
-    if ($line->can_select) {
-        $line->is_selected(not $line->is_selected);
-    }
+    $self->selector->line($self->_cursor)->toggle;
     $self->_redraw;
     return 1;
 }
@@ -281,7 +278,7 @@ sub _action_toggle_selection {
 sub _action_select_all {
     my ($self) = @_;
 
-    $self->selector->select_all(1);
+    $_->select for $self->selector->selectable_lines;
     $self->_redraw;
     return 1;
 }
@@ -289,7 +286,7 @@ sub _action_select_all {
 sub _action_deselect_all {
     my ($self) = @_;
 
-    $self->selector->select_all(0);
+    $_->deselect for $self->selector->selectable_lines;
     $self->_redraw;
     return 1;
 }
@@ -297,7 +294,7 @@ sub _action_deselect_all {
 sub _action_toggle_all {
     my ($self) = @_;
 
-    $_->toggle for $self->selector->grep(sub { $_->can_select });
+    $_->toggle for $self->selector->selectable_lines;
     $self->_redraw;
     return 1;
 }
