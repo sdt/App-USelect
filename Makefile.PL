@@ -9,12 +9,14 @@ build_requires 'Test::More';
 
 requires        'autodie';
 requires        'Curses';
+requires        'Getopt::Long';
 requires        'List::Util';
+requires        'Hash::Util';
 requires        'Modern::Perl';
 requires        'Moose';
+requires        'Try::Tiny';
 
 install_script  'bin/uselect';
 auto_install;
 
 WriteAll;
-
