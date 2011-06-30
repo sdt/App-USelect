@@ -4,6 +4,7 @@ use Moose;
 
 use Modern::Perl;
 use Curses;
+use Hash::Util  qw/ lock_hash /;
 use List::Util  qw/ min max /;
 
 use App::USelect::Selector;
@@ -11,64 +12,88 @@ use App::USelect::Selector;
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
 has selector => (
-    is      => 'ro',
-    isa     => 'App::USelect::Selector',
-);
-
-has _first_line => (
-    is      => 'rw',
-    isa     => 'Int',
-    default => sub { 0 },
-);
-
-has _cursor => (
-    is      => 'rw',
-    isa     => 'Int',
-    default => sub { 0 },
+    is       => 'ro',
+    isa      => 'App::USelect::Selector',
 );
 
 has window => (
-    is      => 'rw',
-    isa     => 'Curses',
-    default => sub { Curses->new },
+    is       => 'rw',
+    isa      => 'Curses',
+    default  => sub { Curses->new },
+);
+
+has _first_line => (
+    is       => 'rw',
+    isa      => 'Int',
+    init_arg => undef,
+    default  => 0,
+);
+
+has _cursor => (
+    is       => 'rw',
+    isa      => 'Int',
+    init_arg => undef,
+    default  => sub { 0 },
+);
+
+has _mode => (
+    is       => 'rw',
+    isa      => 'Str',
+    init_arg => undef,
+    default  => 'select',
 );
 
 has _width => (
-    is      => 'rw',
-    isa     => 'Int',
+    is       => 'rw',
+    isa      => 'Int',
+    init_arg => undef,
 );
 
 has _height => (
-    is      => 'rw',
-    isa     => 'Int',
-);
-
-has _debug_msg => (
-    is      => 'rw',
-    isa     => 'Str',
-    default => '',
+    is       => 'rw',
+    isa      => 'Int',
+    init_arg => undef,
 );
 
 my $esc     = chr(27);
 my $newline = "\n";
 
-my %key_action_table = (
-    $newline            => \&_action_quit,
-    $esc                => \&_action_abort,
-    q                   => \&_action_abort,
-    Curses::KEY_RESIZE  => \&_action_resize,
-    k                   => \&_action_cursor_up,
-    Curses::KEY_UP      => \&_action_cursor_up,
-    j                   => \&_action_cursor_down,
-    Curses::KEY_DOWN    => \&_action_cursor_down,
-    g                   => \&_action_cursor_top,
-    G                   => \&_action_cursor_bottom,
-    ' '                 => \&_action_toggle_selection,
-    a                   => \&_action_select_all,
-    '*'                 => \&_action_select_all,
-    '-'                 => \&_action_deselect_all,
-    t                   => \&_action_toggle_all,
+my %key_dispatch_table = (
+
+    select => {
+        $newline            => \&_action_quit,
+        $esc                => \&_action_abort,
+        q                   => \&_action_abort,
+        Curses::KEY_RESIZE  => \&_action_resize,
+        k                   => \&_action_cursor_up,
+        Curses::KEY_UP      => \&_action_cursor_up,
+        j                   => \&_action_cursor_down,
+        Curses::KEY_DOWN    => \&_action_cursor_down,
+        g                   => \&_action_cursor_top,
+        G                   => \&_action_cursor_bottom,
+        ' '                 => \&_action_toggle_selection,
+        a                   => \&_action_select_all,
+        '*'                 => \&_action_select_all,
+        'A'                 => \&_action_deselect_all,
+        '-'                 => \&_action_deselect_all,
+        t                   => \&_action_toggle_all,
+        h                   => \&_action_enter_help_mode,
+        '?'                 => \&_action_enter_help_mode,
+    },
+
+    help => {
+        $esc                => \&_action_leave_help_mode,
+        q                   => \&_action_leave_help_mode,
+        ' '                 => \&_action_leave_help_mode,
+    },
 );
+lock_hash(%key_dispatch_table);
+
+my %draw_dispatch_table = (
+    select  => \&_draw_select_mode,
+    help    => \&_draw_help_mode,
+);
+lock_hash(%key_dispatch_table);
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -107,17 +132,14 @@ sub run {
 sub _update {
     my ($self) = @_;
 
-    my $in = $self->window->getch;
-    my $handler = $key_action_table{$in};
+    my $key = $self->window->getch;
+    my $handler = $key_dispatch_table{$self->_mode}->{$key};
 
     if ($handler) {
         return unless $self->$handler();
     }
-    else {
-        $self->_debug_msg("$in");
-    }
-
     $self->_redraw;
+
     return 1;
 }
 
@@ -134,6 +156,16 @@ sub _redraw {
     my ($self) = @_;
 
     $self->_update_size;
+    $self->window->erase;
+
+    $draw_dispatch_table{$self->_mode}->($self);
+
+    $self->_draw_status_line;
+    $self->window->refresh;
+}
+
+sub _draw_select_mode {
+    my ($self) = @_;
 
     if ($self->_cursor < $self->_first_line) {
         $self->_first_line($self->_cursor);
@@ -141,8 +173,6 @@ sub _redraw {
     if ($self->_cursor >= $self->_first_line + $self->_height - 1) {
         $self->_first_line($self->_cursor - $self->_height + 2);
     }
-
-    $self->window->erase();
 
     my $slr = $self->selector;
     my $line_count = min($self->_height - 1,
@@ -158,8 +188,37 @@ sub _redraw {
                      '# ' : '. ' : '  ';
         $self->print_line(0, $y, $attr, $prefix . $line->text);
     }
-    $self->_draw_status_line;
-    $self->window->refresh;
+}
+
+sub _draw_help_mode {
+    my ($self) = @_;
+
+    my $help_text = <<"END_HELP";
+
+    ENTER           exit with current selection
+
+    ESC, q          abort (with no selection)
+
+    j, KEY_DOWN     next selectable line
+    k, KEY_UP       prev selectable line
+
+    g               first selectable line
+    G               last selectable line
+
+    SPACE           toggle selection for this line
+
+    a, *            select all lines
+    A, -            deselect all lines
+    t               toggle selection for all lines
+
+    ?, h            help
+
+END_HELP
+
+    my $y = 2;
+    for my $line (split(/\n/, $help_text)) {
+        $self->print_line(0, $y++, 0, $line);
+    }
 }
 
 sub _draw_status_line {
@@ -174,7 +233,7 @@ sub _draw_status_line {
             ? "Selected $selected of $selectable"
             : 'No lines selectable';
 
-    my $rhs = $self->_debug_msg;
+    my $rhs = 'uselect ? for help';
     my $len = length($lhs) + length($rhs);
     my $msg = $lhs . (' ' x ($self->_width - $len - 1)) . $rhs;
 
@@ -269,6 +328,18 @@ sub _action_deselect_all {
 sub _action_toggle_all {
     my ($self) = @_;
     $_->toggle for $self->selector->selectable_lines;
+    return 1;
+}
+
+sub _action_enter_help_mode {
+    my ($self) = @_;
+    $self->_mode('help');
+    return 1;
+}
+
+sub _action_leave_help_mode {
+    my ($self) = @_;
+    $self->_mode('select');
     return 1;
 }
 
