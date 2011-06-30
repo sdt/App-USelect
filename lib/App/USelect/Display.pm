@@ -65,6 +65,7 @@ sub _build_key_action_table {
     my %kt = (
         $newline            => \&_action_quit,
         $esc                => \&_action_abort,
+        q                   => \&_action_abort,
         Curses::KEY_RESIZE  => \&_action_resize,
         k                   => \&_action_cursor_up,
         Curses::KEY_UP      => \&_action_cursor_up,
@@ -75,6 +76,8 @@ sub _build_key_action_table {
         ' '                 => \&_action_toggle_selection,
         a                   => \&_action_select_all,
         '*'                 => \&_action_select_all,
+        '-'                 => \&_action_deselect_all,
+        't'                 => \&_action_toggle_all,
     );
     return \%kt;
 }
@@ -279,6 +282,22 @@ sub _action_select_all {
     my ($self) = @_;
 
     $self->selector->select_all(1);
+    $self->_redraw;
+    return 1;
+}
+
+sub _action_deselect_all {
+    my ($self) = @_;
+
+    $self->selector->select_all(0);
+    $self->_redraw;
+    return 1;
+}
+
+sub _action_toggle_all {
+    my ($self) = @_;
+
+    $_->toggle for $self->selector->grep(sub { $_->can_select });
     $self->_redraw;
     return 1;
 }

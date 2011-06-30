@@ -8,14 +8,19 @@ use App::USelect::Display;
 use Getopt::Long;
 use autodie;
 
+my $include_blanks = 0;
 my $select_code = '1';
 
 process_options();
 
-my $select_func = eval('sub {' . $select_code . '}');
+if (not $include_blanks) {
+    $select_code = '/./ && (' . $select_code . ')';
+}
+
+my $select_func = eval('sub { local $_ = $_[0]; ' . $select_code . '}');
 usage($@) if $@;
 
-my @lines = <STDIN>;
+chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
 
 my $selector = App::USelect::Selector->new(
         text          => \@lines,
@@ -33,13 +38,24 @@ $display->run;
 
 detach_console($stdout);
 
-print $selector->selection;
+say for $selector->selection;
 
 #-------------------------------------------------------------------------------
 
 sub usage {
-    say STDERR "usage: $0 [--select code]";
     say STDERR for @_;
+    say STDERR "usage: $0 [options] [items]";
+    say STDERR <<'END_USAGE';
+options:
+    --blank-lines|-b            make blank lines selectable
+
+    --select|-s <perlcode>      only lines matching perlcode are selectable
+                                input line is in $_
+
+    --version|-V
+
+END_USAGE
+
     exit 1;
 }
 
@@ -59,8 +75,9 @@ sub detach_console {
 
 sub process_options {
     my @options_spec = (
-        "select|s=s"    => \$select_code,
-        "version|V"     => sub { say "uselect v$VERSION"; exit 0 },
+        "blank_lines|b"     => \$include_blanks,
+        "select|s=s"        => \$select_code,
+        "version|V"         => sub { say "uselect v$VERSION"; exit 0 },
     );
 
     if (not GetOptions(@options_spec)) {

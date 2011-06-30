@@ -18,6 +18,12 @@ has is_selected => (
     is          => 'rw',
     isa         => 'Bool',
     default     => 0,
+    traits      => ['Bool'],
+    handles     => {
+        select      => 'set',
+        deselect    => 'unset',
+        toggle      => 'toggle',
+    },
 );
 
 package App::USelect::Selector;
