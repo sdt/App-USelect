@@ -2,13 +2,13 @@ package App::USelect::Display;
 use Moose;
 #use namespace::autoclean;
 
-BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
-
 use Modern::Perl;
 use Curses;
 use List::Util  qw/ min max /;
 
 use App::USelect::Selector;
+
+BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
 has selector => (
     is      => 'ro',
@@ -49,38 +49,26 @@ has _debug_msg => (
     default => '',
 );
 
-has key_action_table => (
-    is       => 'ro',
-    isa      => 'HashRef',
-    init_arg => undef,
-    builder  => '_build_key_action_table',
-    lazy     => 1,
+my $esc     = chr(27);
+my $newline = "\n";
+
+my %key_action_table = (
+    $newline            => \&_action_quit,
+    $esc                => \&_action_abort,
+    q                   => \&_action_abort,
+    Curses::KEY_RESIZE  => \&_action_resize,
+    k                   => \&_action_cursor_up,
+    Curses::KEY_UP      => \&_action_cursor_up,
+    j                   => \&_action_cursor_down,
+    Curses::KEY_DOWN    => \&_action_cursor_down,
+    g                   => \&_action_cursor_top,
+    G                   => \&_action_cursor_bottom,
+    ' '                 => \&_action_toggle_selection,
+    a                   => \&_action_select_all,
+    '*'                 => \&_action_select_all,
+    '-'                 => \&_action_deselect_all,
+    t                   => \&_action_toggle_all,
 );
-
-sub _build_key_action_table {
-    my ($self) = @_;
-
-    my $esc     = chr(27);
-    my $newline = "\n";
-    my %kt = (
-        $newline            => \&_action_quit,
-        $esc                => \&_action_abort,
-        q                   => \&_action_abort,
-        Curses::KEY_RESIZE  => \&_action_resize,
-        k                   => \&_action_cursor_up,
-        Curses::KEY_UP      => \&_action_cursor_up,
-        j                   => \&_action_cursor_down,
-        Curses::KEY_DOWN    => \&_action_cursor_down,
-        g                   => \&_action_cursor_top,
-        G                   => \&_action_cursor_bottom,
-        ' '                 => \&_action_toggle_selection,
-        a                   => \&_action_select_all,
-        '*'                 => \&_action_select_all,
-        '-'                 => \&_action_deselect_all,
-        't'                 => \&_action_toggle_all,
-    );
-    return \%kt;
-}
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -94,6 +82,7 @@ sub BUILD {
     cbreak;
     $self->window->keypad(1);
     curs_set(0);
+    $self->_redraw;
 }
 
 sub DEMOLISH {
@@ -112,7 +101,6 @@ sub print_line {
 sub run {
     my ($self) = shift;
 
-    $self->_on_resize;
     while ($self->_update) { }
 }
 
@@ -120,17 +108,42 @@ sub _update {
     my ($self) = @_;
 
     my $in = $self->window->getch;
-    my $handler = $self->key_action_table->{$in};
+    my $handler = $key_action_table{$in};
 
-    return $handler->($self) if $handler;
+    if ($handler) {
+        return unless $self->$handler();
+    }
+    else {
+        $self->_debug_msg("$in");
+    }
 
-    $self->_debug_msg("$in");
     $self->_redraw;
     return 1;
 }
 
+sub _update_size {
+    my ($self) = @_;
+
+    my ($h, $w);
+    $self->window->getmaxyx($h, $w);
+    $self->_width($w);
+    $self->_height($h);
+}
+
 sub _redraw {
     my ($self) = @_;
+
+    $self->_update_size;
+
+    if ($self->_cursor < $self->_first_line) {
+        $self->_first_line($self->_cursor);
+    }
+    if ($self->_cursor >= $self->_first_line + $self->_height - 1) {
+        $self->_first_line($self->_cursor - $self->_height + 2);
+    }
+
+    $self->window->erase();
+
     my $slr = $self->selector;
     my $line_count = min($self->_height - 1,
                          $slr->line_count - $self->_first_line);
@@ -146,7 +159,6 @@ sub _redraw {
         $self->print_line(0, $y, $attr, $prefix . $line->text);
     }
     $self->_draw_status_line;
-    #$self->window->move($self->_width, $self->_height);
     $self->window->refresh;
 }
 
@@ -169,29 +181,12 @@ sub _draw_status_line {
     $self->print_line(0, $y, $attr, $msg);
 }
 
-sub _on_resize {
-    my ($self) = @_;
-    my ($h, $w);
-    $self->window->getmaxyx($h, $w);
-    $self->_width($w);
-    $self->_height($h);
-
-    if ($self->_cursor < $self->_first_line) {
-        $self->_first_line($self->_cursor);
-    }
-    if ($self->_cursor >= $self->_first_line + $self->_height - 1) {
-        $self->_first_line($self->_cursor - $self->_height + 2);
-    }
-
-    $self->_redraw;
-}
-
 sub _scroll_to_top {
     my ($self) = @_;
 
     $self->_cursor($self->selector->next_selectable(-1, +1));
     $self->_first_line(0);
-    $self->_redraw;
+    return 1;
 }
 
 sub _scroll_to_bottom {
@@ -200,23 +195,16 @@ sub _scroll_to_bottom {
     my $slr = $self->selector;
     $self->_cursor($slr->next_selectable($slr->line_count, -1));
     $self->_first_line(max(0, $slr->line_count - $self->_height + 1));
-    $self->_redraw;
+    return 1;
 }
 
-sub _action_quit { return }
+sub _action_quit    { return }
+sub _action_resize  { return 1 }
 
 sub _action_abort {
     my ($self) = @_;
-
     $_->deselect for $self->selector->selectable_lines;
     return;
-}
-
-sub _action_resize {
-    my ($self) = @_;
-
-    $self->_on_resize;
-    return 1;
 }
 
 sub _action_cursor_up {
@@ -231,7 +219,6 @@ sub _action_cursor_up {
     else {
         $self->_cursor($new_curs);
     }
-    $self->_on_resize;
     return 1;
 }
 
@@ -247,55 +234,41 @@ sub _action_cursor_down {
     else {
         $self->_cursor($new_curs);
     }
-    $self->_on_resize;
     return 1;
 }
 
 sub _action_cursor_top {
     my ($self) = @_;
-
     $self->_scroll_to_top;
-    $self->_on_resize;
     return 1;
 }
-
 sub _action_cursor_bottom {
     my ($self) = @_;
-
     $self->_scroll_to_bottom;
-    $self->_on_resize;
     return 1;
 }
 
 sub _action_toggle_selection {
     my ($self) = @_;
-
     $self->selector->line($self->_cursor)->toggle;
-    $self->_redraw;
     return 1;
 }
 
 sub _action_select_all {
     my ($self) = @_;
-
     $_->select for $self->selector->selectable_lines;
-    $self->_redraw;
     return 1;
 }
 
 sub _action_deselect_all {
     my ($self) = @_;
-
     $_->deselect for $self->selector->selectable_lines;
-    $self->_redraw;
     return 1;
 }
 
 sub _action_toggle_all {
     my ($self) = @_;
-
     $_->toggle for $self->selector->selectable_lines;
-    $self->_redraw;
     return 1;
 }
 
