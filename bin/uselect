@@ -20,11 +20,18 @@ my $select_code;
 process_options();
 
 if (defined $select_code) {
-    # Try evaluating the user code on its own first - it'll give a better
-    # error message that way, rather than with our extra code added.
-    #local $_ = '';      # silence warnings about $_ being uninitialised
+    # Try evaluating the user code on its own first - we can tailor a better
+    # error message this way.
+
+    local $_ = ''; # silence warnings about $_ being uninitialised
     my $usercode = eval($select_code);
-    die $@ if ($@)
+    if ($@) {
+        # Attempt to replace the default error message with something more
+        # contextual. Not sure how robust this is.
+        my $msg = $@;
+        $msg =~ s/at \(eval \d+\) line \d+/in '$select_code'/;
+        die $msg;
+    }
 }
 else {
     $select_code = '1';
@@ -87,6 +94,19 @@ END_USAGE
     exit 1;
 }
 
+
+sub process_options {
+    my @options_spec = (
+        "blank_lines|b"     => \$include_blanks,
+        "select|s=s"        => \$select_code,
+        "version|V"         => sub { say "uselect v$VERSION"; exit 0 },
+    );
+
+    if (not GetOptions(@options_spec)) {
+        usage();
+    }
+}
+
 sub attach_console {
     open(STDIN, '<', '/dev/tty');
 
@@ -99,16 +119,4 @@ sub attach_console {
 sub detach_console {
     my ($stdout) = @_;
     open(STDOUT, '>&', $stdout);
-}
-
-sub process_options {
-    my @options_spec = (
-        "blank_lines|b"     => \$include_blanks,
-        "select|s=s"        => \$select_code,
-        "version|V"         => sub { say "uselect v$VERSION"; exit 0 },
-    );
-
-    if (not GetOptions(@options_spec)) {
-        usage();
-    }
 }
