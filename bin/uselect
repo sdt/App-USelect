@@ -9,9 +9,9 @@ use Getopt::Long;
 use Try::Tiny;
 use autodie;
 
-# Makes warnings a bit easier to track down
-# use Carp qw/ confess /;
-# $SIG{__WARN__} = sub { confess };
+# Some debugging aids when things go weird
+#use Carp::Always;
+#open(STDERR, '>', '/tmp/uselect.log');
 
 # options
 my $include_blanks = 0;
@@ -58,12 +58,17 @@ if (not $selector->selectable_lines) {
 my $stdout = attach_console();
 
 my $errors;
+my $display;
 try {
-    my $display = App::USelect::Display->new(selector => $selector);
+    $display = App::USelect::Display->new(selector => $selector);
     $display->run;
 }
 catch {
     $errors = $_;
+}
+finally {
+    $display->end;
+    undef $display;
 };
 
 detach_console($stdout);
