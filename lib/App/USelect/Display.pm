@@ -60,7 +60,8 @@ sub _build_command_table {
             help => 'select current line and exit',
             keys => [ $enter ],
             code => sub {
-                    $self->selector->line($self->_cursor)->select;
+                    $self->selector->line($self->_cursor)->select
+                        if not $self->selector->selected_lines;
                     $self->_exit_requested(1);
                 },
         },
