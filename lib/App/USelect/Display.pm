@@ -33,7 +33,7 @@ has _cursor => (
     is       => 'rw',
     isa      => 'Int',
     init_arg => undef,
-    default  => sub { 0 },
+    default  => 0,
 );
 
 has _mode => (
@@ -53,6 +53,13 @@ has _height => (
     is       => 'rw',
     isa      => 'Int',
     init_arg => undef,
+);
+
+has _exit_requested => (
+    is       => 'rw',
+    isa      => 'Bool',
+    init_arg => undef,
+    default  => 0,
 );
 
 my $esc     = chr(27);
@@ -126,7 +133,9 @@ sub print_line {
 sub run {
     my ($self) = shift;
 
-    while ($self->_update) { }
+    while (not $self->_exit_requested) {
+        $self->_update;
+    }
 }
 
 sub _update {
@@ -136,11 +145,9 @@ sub _update {
     my $handler = $key_dispatch_table{$self->_mode}->{$key};
 
     if ($handler) {
-        return unless $self->$handler();
+        $self->$handler();
+        $self->_redraw;
     }
-    $self->_redraw;
-
-    return 1;
 }
 
 sub _update_size {
@@ -240,107 +247,96 @@ sub _draw_status_line {
     $self->print_line(0, $y, $attr, $msg);
 }
 
-sub _scroll_to_top {
-    my ($self) = @_;
+sub _move_cursor {
+    my ($self, $dir) = @_;
 
-    $self->_cursor($self->selector->next_selectable(-1, +1));
-    $self->_first_line(0);
-    return 1;
+    my $curs = $self->_cursor;
+    my $new_curs = $self->selector->next_selectable($self->_cursor, $dir);
+
+    if ($new_curs == $self->_cursor) {
+        $self->_scroll_to_end($dir);
+    }
+    else {
+        $self->_cursor($new_curs);
+    }
+
 }
 
-sub _scroll_to_bottom {
-    my ($self) = @_;
-
+sub _scroll_to_end {
+    my ($self, $dir) = @_;
     my $slr = $self->selector;
-    $self->_cursor($slr->next_selectable($slr->line_count, -1));
-    $self->_first_line(max(0, $slr->line_count - $self->_height + 1));
-    return 1;
+
+    if ($dir < 0) {
+        $self->_cursor($slr->next_selectable(-1, +1));
+        $self->_first_line(0);
+    }
+    else {
+        $self->_cursor($slr->next_selectable($slr->line_count, -1));
+        $self->_first_line(max(0, $slr->line_count - $self->_height + 1));
+    }
 }
 
-sub _action_quit    { return }
-sub _action_resize  { return 1 }
+sub _action_quit {
+    my ($self) = @_;
+    $self->_exit_requested(1);
+}
+
+sub _action_resize { }
 
 sub _action_abort {
     my ($self) = @_;
     $_->deselect for $self->selector->selectable_lines;
-    return;
+    $self->_exit_requested(1);
 }
 
 sub _action_cursor_up {
     my ($self) = @_;
-
-    my $curs = $self->_cursor;
-    my $new_curs = $self->selector->next_selectable($curs, -1);
-
-    if ($curs == $new_curs) {
-        $self->_scroll_to_top;
-    }
-    else {
-        $self->_cursor($new_curs);
-    }
-    return 1;
+    $self->_move_cursor(-1);
 }
 
 sub _action_cursor_down {
     my ($self) = @_;
-
-    my $curs = $self->_cursor;
-    my $new_curs = $self->selector->next_selectable($curs, 1);
-
-    if ($curs == $new_curs) {
-        $self->_scroll_to_bottom;
-    }
-    else {
-        $self->_cursor($new_curs);
-    }
-    return 1;
+    $self->_move_cursor(1);
 }
 
 sub _action_cursor_top {
     my ($self) = @_;
-    $self->_scroll_to_top;
-    return 1;
+    $self->_scroll_to_end(-1);
 }
+
 sub _action_cursor_bottom {
     my ($self) = @_;
-    $self->_scroll_to_bottom;
-    return 1;
+    $self->_scroll_to_end(+1);
 }
 
 sub _action_toggle_selection {
     my ($self) = @_;
     $self->selector->line($self->_cursor)->toggle;
-    return 1;
 }
 
 sub _action_select_all {
     my ($self) = @_;
     $_->select for $self->selector->selectable_lines;
-    return 1;
 }
 
 sub _action_deselect_all {
     my ($self) = @_;
     $_->deselect for $self->selector->selectable_lines;
-    return 1;
 }
 
 sub _action_toggle_all {
     my ($self) = @_;
     $_->toggle for $self->selector->selectable_lines;
-    return 1;
 }
 
 sub _action_enter_help_mode {
     my ($self) = @_;
     $self->_mode('help');
-    return 1;
 }
 
 sub _action_leave_help_mode {
     my ($self) = @_;
     $self->_mode('select');
-    return 1;
 }
 
 #__PACKAGE__->meta->make_immutable;
