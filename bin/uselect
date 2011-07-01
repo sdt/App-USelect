@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use version; our $VERSION = qv('2011.06.30.1');
+use version; our $VERSION = qv('2011.07.01_1');
 
 use Modern::Perl;
 use App::USelect::Selector;

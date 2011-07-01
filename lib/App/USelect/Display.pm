@@ -57,9 +57,12 @@ sub _build_command_table {
     my %select_mode_table = (
 
         exit => {
-            help => 'exit with current selection',
+            help => 'select current line and exit',
             keys => [ $enter ],
-            code => sub { $self->_exit_requested(1) },
+            code => sub {
+                    $self->selector->line($self->_cursor)->select;
+                    $self->_exit_requested(1);
+                },
         },
 
         abort => {
