@@ -30,7 +30,8 @@ if (defined $select_code) {
         # contextual. Not sure how robust this is.
         my $msg = $@;
         $msg =~ s/at \(eval \d+\) line \d+/in '$select_code'/;
-        die $msg;
+        say STDERR $msg;
+        exit 4;
     }
 }
 else {
@@ -52,16 +53,17 @@ my $selector = App::USelect::Selector->new(
     );
 if (not $selector->selectable_lines) {
     say STDERR 'No selectable lines.';
-    exit 0;
+    exit 2;
 }
 
 my $stdout = attach_console();
 
 my $errors;
 my $display;
+my $error_code = 1;
 try {
     $display = App::USelect::Display->new(selector => $selector);
-    $display->run;
+    $error_code = $display->run;
 }
 catch {
     $errors = $_;
@@ -75,10 +77,12 @@ detach_console($stdout);
 
 if ($errors) {
     say STDERR 'ERROR:', $errors;
-    exit 1;
+    exit 3;
 }
 
 say $_->text for $selector->selected_lines;
+
+exit ($selector->selected_lines == 0);
 
 #-------------------------------------------------------------------------------
 
