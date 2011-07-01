@@ -15,6 +15,7 @@ requires        'Hash::Util';
 requires        'Modern::Perl';
 requires        'Moose';
 requires        'Try::Tiny';
+requires        'version';
 
 install_script  'bin/uselect';
 auto_install;
