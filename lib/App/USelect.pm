@@ -5,10 +5,6 @@ use Moose;
 use Modern::Perl;
 use List::Util  qw/ max /;
 
-use App::USelect::Selector;
-
-BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
-
 has selector => (
     is       => 'ro',
     isa      => 'App::USelect::Selector',
@@ -17,7 +13,7 @@ has selector => (
 
 has ui => (
     is       => 'rw',
-    isa      => 'App::USelect::UI::Curses',
+    does     => 'App::USelect::UI',
     required => 1,
 );
 
@@ -196,8 +192,8 @@ sub _draw {
     if ($self->_cursor < $self->_first_line) {
         $self->_first_line($self->_cursor);
     }
-    if ($self->_cursor >= $self->_first_line + $self->ui->_height - 1) {
-        $self->_first_line($self->_cursor - $self->ui->_height + 2);
+    if ($self->_cursor >= $self->_first_line + $self->ui->height - 1) {
+        $self->_first_line($self->_cursor - $self->ui->height + 2);
     }
 
     given ($self->_mode) {
@@ -238,7 +234,7 @@ sub _scroll_to_end {
     }
     else {
         $self->_cursor($slr->next_selectable($slr->line_count, -1));
-        $self->_first_line(max(0, $slr->line_count - $self->ui->_height + 1));
+        $self->_first_line(max(0, $slr->line_count - $self->ui->height + 1));
     }
 }
 
