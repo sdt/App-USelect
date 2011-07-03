@@ -1,5 +1,5 @@
 package App::USelect::Selector::Line;
-use Moose;
+use Mouse;
 
 has text => (
     is          => 'ro',
@@ -15,7 +15,7 @@ sub can_select {
 }
 
 package App::USelect::Selector::SelectableLine;
-use Moose;
+use Mouse;
 extends 'App::USelect::Selector::Line';
 
 has is_selected => (
@@ -31,7 +31,7 @@ has is_selected => (
 );
 
 package App::USelect::Selector;
-use Moose;
+use Mouse;
 use Modern::Perl;
 
 has _text => (

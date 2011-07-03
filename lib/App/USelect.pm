@@ -1,5 +1,5 @@
 package App::USelect;
-use Moose;
+use Mouse;
 use namespace::autoclean;
 
 use Modern::Perl;

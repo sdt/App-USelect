@@ -1,9 +1,7 @@
 package App::USelect::UI;
-use Moose::Role;
+use Mouse::Role;
 
 requires qw/ end draw draw_help update command_keys /;
-
-use Modern::Perl;
 
 has width => (
     is       => 'rw',

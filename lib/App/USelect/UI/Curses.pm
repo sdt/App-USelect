@@ -1,5 +1,5 @@
 package App::USelect::UI::Curses;
-use Moose;
+use Mouse;
 
 with 'App::USelect::UI';
 use namespace::autoclean;
