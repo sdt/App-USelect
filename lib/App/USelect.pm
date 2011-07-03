@@ -1,6 +1,6 @@
 package App::USelect;
 use Moose;
-#use namespace::autoclean;
+use namespace::autoclean;
 
 use Modern::Perl;
 use List::Util  qw/ max /;
@@ -251,5 +251,5 @@ sub has_var {
 }
 
 
-#__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable;
 1;

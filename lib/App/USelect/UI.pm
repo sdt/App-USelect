@@ -1,6 +1,5 @@
 package App::USelect::UI;
 use Moose::Role;
-#use namespace::autoclean;
 
 requires qw/ end draw draw_help update command_keys /;
 
@@ -18,5 +17,4 @@ has height => (
     init_arg => undef,
 );
 
-#__PACKAGE__->meta->make_immutable;
 1;

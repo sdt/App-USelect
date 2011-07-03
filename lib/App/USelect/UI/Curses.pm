@@ -2,12 +2,12 @@ package App::USelect::UI::Curses;
 use Moose;
 
 with 'App::USelect::UI';
-#use namespace::autoclean;
+use namespace::autoclean;
 
 # Curses implementation of USelect:UI
 
 use Modern::Perl;
-use Curses;
+use Curses  qw/ cbreak curs_set endwin init_pair noecho start_color /;
 use List::Util  qw/ min /;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
@@ -16,18 +16,6 @@ has window => (
     is       => 'rw',
     isa      => 'Curses',
     default  => sub { Curses->new },
-);
-
-has DELETEME_width => (
-    is       => 'rw',
-    isa      => 'Int',
-    init_arg => undef,
-);
-
-has DELETEME_height => (
-    is       => 'rw',
-    isa      => 'Int',
-    init_arg => undef,
 );
 
 my $esc = chr(27);
@@ -66,10 +54,10 @@ sub BUILD {
     my ($self, $args) = @_;
 
     start_color;
-    init_pair(1, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(2, COLOR_WHITE,  COLOR_BLUE);
-    init_pair(3, COLOR_WHITE,  COLOR_RED);
-    init_pair(4, COLOR_GREEN,  COLOR_BLACK);
+    init_pair(1, Curses::COLOR_YELLOW, Curses::COLOR_BLACK);
+    init_pair(2, Curses::COLOR_WHITE,  Curses::COLOR_BLUE);
+    init_pair(3, Curses::COLOR_WHITE,  Curses::COLOR_RED);
+    init_pair(4, Curses::COLOR_GREEN,  Curses::COLOR_BLACK);
     noecho;
     cbreak;
     $self->window->keypad(1);
@@ -91,48 +79,6 @@ sub update {
     }
 }
 
-sub _pre_draw {
-    my ($self, $selector) = @_;
-
-    $self->_update_size;
-    $self->window->erase;
-}
-
-sub _post_draw {
-    my ($self, $selector) = @_;
-
-    $self->_draw_status_line($selector);
-    $self->window->refresh;
-}
-
-sub DELETEME_draw {
-    my ($self, $selector, $first_line, $cursor_line, $mode) = @_;
-
-    $self->_update_size;
-    $self->window->erase;
-
-    given ($mode) {
-        when ('select') {
-            $self->_draw_select_mode($selector, $first_line, $cursor_line)
-        }
-        when ('help') {
-            $self->_draw_help_mode($selector, $first_line, $cursor_line)
-        }
-    }
-
-    $self->_draw_status_line($selector);
-    $self->window->refresh;
-}
-
-sub _update_size {
-    my ($self) = @_;
-
-    my ($h, $w);
-    $self->window->getmaxyx($h, $w);
-    $self->width($w);
-    $self->height($h);
-}
-
 sub draw {
     my ($self, $selector, $first_line, $cursor) = @_;
 
@@ -144,8 +90,8 @@ sub draw {
     for my $y (0 .. $line_count - 1) {
         my $line_no = $y + $first_line;
         my $line = $selector->line($y + $first_line);
-        my $attr = ($line_no == $cursor) ? COLOR_PAIR(3)
-                 : $line->can('select') ? COLOR_PAIR(1) : 0;
+        my $attr = ($line_no == $cursor) ? Curses::COLOR_PAIR(3)
+                 : $line->can('select') ? Curses::COLOR_PAIR(1) : 0;
         my $prefix = $line->can('select') ?
                      $line->is_selected ?
                      '# ' : '. ' : '  ';
@@ -169,10 +115,15 @@ sub draw_help {
     $self->_post_draw($selector);
 }
 
+sub command_keys {
+    my ($self, $command) = @_;
+    return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
+}
+
 sub _draw_status_line {
     my ($self, $selector) = @_;
     my $y = $self->height - 1;
-    my $attr = COLOR_PAIR(2);
+    my $attr = Curses::COLOR_PAIR(2);
 
     my $selectable = $selector->selectable_lines;
     my $selected   = $selector->selected_lines;
@@ -197,10 +148,28 @@ sub _print_line {
     $self->window->attrset($old_attr);
 }
 
-sub command_keys {
-    my ($self, $command) = @_;
-    return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
+sub _pre_draw {
+    my ($self, $selector) = @_;
+
+    $self->_update_size;
+    $self->window->erase;
 }
 
-#__PACKAGE__->meta->make_immutable;
+sub _post_draw {
+    my ($self, $selector) = @_;
+
+    $self->_draw_status_line($selector);
+    $self->window->refresh;
+}
+
+sub _update_size {
+    my ($self) = @_;
+
+    my ($h, $w);
+    $self->window->getmaxyx($h, $w);
+    $self->width($w);
+    $self->height($h);
+}
+
+__PACKAGE__->meta->make_immutable;
 1;
