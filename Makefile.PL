@@ -13,6 +13,7 @@ requires        'Getopt::Long';
 requires        'List::Util';
 requires        'Modern::Perl';
 requires        'MouseX::NativeTraits';
+requires        'Pod::Usage';
 requires        'Try::Tiny';
 requires        'version';
 

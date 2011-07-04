@@ -43,14 +43,14 @@ has _help_text => (
     builder  => '_build_help_text',
 );
 
-sub has_int  { has_var('Int',  @_) }
-sub has_str  { has_var('Str',  @_) }
-sub has_bool { has_var('Bool', @_) }
+sub _has_int  { _has_var('Int',  @_) }
+sub _has_str  { _has_var('Str',  @_) }
+sub _has_bool { _has_var('Bool', @_) }
 
-has_int  _first_line => 0;
-has_int  _cursor     => 0;
-has_str  _mode       => 'select';
-has_bool _exit_requested => 0;
+_has_int  _first_line => 0;
+_has_int  _cursor     => 0;
+_has_str  _mode       => 'select';
+_has_bool _exit_requested => 0;
 
 sub _build_command_table {
     my ($self) = @_;
@@ -250,7 +250,7 @@ sub _scroll_to_end {
     }
 }
 
-sub has_var {
+sub _has_var {
     my ($type, $name, $default, %extra) = @_;
 
     has $name => (
@@ -265,3 +265,27 @@ sub has_var {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+App::USelect.pm main application class.
+
+=head1 METHODS
+
+=head2 new( selector => $selector, ui $ui )
+
+Constructor.
+
+=head2 run
+
+Runs the pplication
+
+=head1 AUTHOR
+
+Stephen Thirlwall <sdt@dr.com>
+
+=cut

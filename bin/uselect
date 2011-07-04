@@ -5,6 +5,7 @@ use App::USelect;
 use App::USelect::Selector;
 use App::USelect::UI;
 use Getopt::Long;
+use Pod::Usage;
 use Try::Tiny;
 use autodie;
 
@@ -42,7 +43,7 @@ if (not $include_blanks) {
 }
 
 my $select_func = eval('sub { $_ = $_[0]; ' . $select_code . '}');
-usage($@) if $@;    # this may still occur even if the first parse succeeded
+pod2usage($@) if $@;    # this may still occur even if the first parse succeeded
 
 chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
 
@@ -86,33 +87,16 @@ exit ($selector->selected_lines == 0);
 
 #-------------------------------------------------------------------------------
 
-sub usage {
-    say STDERR for @_;
-    say STDERR "usage: $0 [options] [items]";
-    say STDERR <<'END_USAGE';
-options:
-    --blank-lines|-b            make blank lines selectable
-
-    --select|-s <perlcode>      only lines matching perlcode are selectable
-                                input line is in $_
-
-    --version|-V
-
-END_USAGE
-
-    exit 1;
-}
-
-
 sub process_options {
     my @options_spec = (
         "blank_lines|b"     => \$include_blanks,
+        "help|h|?"          => sub { pod2usage(0) },
         "select|s=s"        => \$select_code,
-        "version|V"         => sub { say "uselect v$App::USelect::VERSION"; exit 0 },
+        "version|v"         => sub { say "uselect v$App::USelect::VERSION"; exit 0 },
     );
 
     if (not GetOptions(@options_spec)) {
-        usage();
+        pod2usage(1);
     }
 }
 
@@ -129,3 +113,53 @@ sub detach_console {
     my ($stdout) = @_;
     open(STDOUT, '>&', $stdout);
 }
+
+__END__
+
+=pod
+
+=head1 NAME
+
+uselect
+
+=head1 SYNOPSIS
+
+uselect [options] [select text]
+
+  options:
+     --blank_lines, -b
+        Force blank lines to be selectable.
+
+    --help, -h, -?
+        Show this help.
+
+    --select <perl expression>, -s <perl expression>
+        Select only those lines for which given perl expression evaluates to
+        true. The input lines are passed as $_.
+
+    --version, -v
+        Print the version and exit.
+
+  Input lines can be specified on the command line after the options, otherwise
+  they will be read from stdin.
+
+=head1 DESCRIPTION
+
+uselect is a reimplementation of iselect by Ralf S. Engelschall
+
+    http://www.ossp.org/pkg/tool/iselect/
+
+uselect is intended to be used as an interactive unix filter. Input lines are
+displayed to the user, and selected lines are written to stderr.
+
+=head1 SERVING SUGGESTIONS
+
+fv() { vim $( find . type f | sort | fgrep "$@" | uselect ); }
+
+gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\d+:/ ); }
+
+=head1 AUTHOR
+
+Stephen Thirlwall <sdt@dr.com>
+
+=cut
