@@ -2,5 +2,6 @@ errors.err
 \.git/
 .\.*\.swp
 .*\.bak
-Makefile
+^Makefile$
 inc/
+App-USelect-.*\.tar\.gz
