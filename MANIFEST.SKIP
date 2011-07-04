@@ -1,0 +1,6 @@
+errors.err
+\.git/
+.\.*\.swp
+.*\.bak
+Makefile
+inc/
