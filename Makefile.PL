@@ -11,9 +11,8 @@ requires        'autodie';
 requires        'Curses';
 requires        'Getopt::Long';
 requires        'List::Util';
-requires        'Hash::Util';
 requires        'Modern::Perl';
-requires        'Moose';
+requires        'MouseX::NativeTraits';
 requires        'Try::Tiny';
 requires        'version';
 
