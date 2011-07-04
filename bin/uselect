@@ -1,11 +1,9 @@
 #!/usr/bin/env perl
 
-use version; our $VERSION = qv('2011.07.04_1');
-
 use Modern::Perl;
 use App::USelect;
 use App::USelect::Selector;
-use App::USelect::UI::Curses;
+use App::USelect::UI;
 use Getopt::Long;
 use Try::Tiny;
 use autodie;
@@ -61,11 +59,10 @@ my $stdout = attach_console();
 
 my $errors;
 my $display;
-my $uselect;
 my $error_code = 1;
 try {
-    $display = App::USelect::UI::Curses->new(selector => $selector);
-    $uselect = App::USelect->new(selector => $selector, ui => $display);
+    $display = App::USelect::UI->new(selector => $selector);
+    my $uselect = App::USelect->new(selector => $selector, ui => $display);
     $error_code = $uselect->run;
 }
 catch {
@@ -111,7 +108,7 @@ sub process_options {
     my @options_spec = (
         "blank_lines|b"     => \$include_blanks,
         "select|s=s"        => \$select_code,
-        "version|V"         => sub { say "uselect v$VERSION"; exit 0 },
+        "version|V"         => sub { say "uselect v$App::USelect::VERSION"; exit 0 },
     );
 
     if (not GetOptions(@options_spec)) {

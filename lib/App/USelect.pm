@@ -2,6 +2,8 @@ package App::USelect;
 use Mouse;
 use namespace::autoclean;
 
+use version; our $VERSION = qv('2011.07.04_2');
+
 use Modern::Perl;
 use List::Util  qw/ max /;
 
@@ -13,7 +15,7 @@ has selector => (
 
 has ui => (
     is       => 'rw',
-    does     => 'App::USelect::UI',
+    isa      => 'App::USelect::UI',
     required => 1,
 );
 
@@ -132,6 +134,10 @@ sub _build_command_table {
         abort => {
             code => sub { $self->_mode('select') },
         },
+        resize => {
+            code => sub { },
+        },
+
 
     );
 
@@ -149,7 +155,10 @@ sub _build_help_text {
         toggle_selection select_all deselect_all toggle_all - help
     );
 
-    my @help;
+    my @help = (
+        "uselect v$VERSION",
+        '',
+    );
 
     for my $item (@help_items) {
         my $help_text = '';
@@ -158,10 +167,13 @@ sub _build_help_text {
             die "No help for $item" unless $command->{help};
 
             my $keys = join(', ', $self->ui->command_keys($item));
-            $help_text = sprintf('%-12s', $keys) . $command->{help};
+            $help_text = sprintf('    %-12s', $keys) . $command->{help};
         }
         push(@help, $help_text);
     }
+
+    push(@help, '');
+    push(@help, 'https://github.com/sdt/App-USelect');
 
     return \@help;
 }
