@@ -5,3 +5,5 @@ errors.err
 ^Makefile$
 inc/
 App-USelect-.*\.tar\.gz
+^MYMETA.yml$
+^META.yml$

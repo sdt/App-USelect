@@ -7,8 +7,6 @@ lib/App/USelect/UI.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-META.yml
-MYMETA.yml
 README
 t/00modules.t
 t/manifest.t
