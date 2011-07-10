@@ -3,7 +3,6 @@ errors.err
 .\.*\.swp
 .*\.bak
 ^Makefile$
-inc/
 App-USelect-.*\.tar\.gz
 ^MYMETA.yml$
 ^META.yml$
