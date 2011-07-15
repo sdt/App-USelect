@@ -15,6 +15,7 @@ requires        'Modern::Perl';
 requires        'MouseX::NativeTraits';
 requires        'namespace::autoclean';
 requires        'Pod::Usage';
+requires        'Text::Tabs';
 requires        'Try::Tiny';
 requires        'version';
 

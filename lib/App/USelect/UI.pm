@@ -5,6 +5,7 @@ use namespace::autoclean;
 use Modern::Perl;
 use Curses  qw/ cbreak curs_set endwin init_pair noecho start_color /;
 use List::Util  qw/ min /;
+use Text::Tabs qw/ expand /;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
@@ -167,9 +168,19 @@ sub _draw_status_line {
 sub _print_line {
     my ($self, $x, $y, $attr, $str) = @_;
 
-    my ($h, $w); $self->window->getmaxyx($h, $w);
     my $old_attr = $self->window->attron($attr);
-    $self->window->addstr($y, $x, $str . (' ' x ($w - length($str))));
+
+    my ($h, $w); $self->window->getmaxyx($h, $w);
+    $w -= $x;
+    $str = expand($str);
+    if (length($str) > $w) {
+        $str = substr($str, $w);
+    }
+    else {
+        $str .= ' ' x ($w - length($str));
+    }
+    $self->window->addstr($y, $x, $str);
+
     $self->window->attrset($old_attr);
 }
 

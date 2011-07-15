@@ -2,10 +2,10 @@ package App::USelect;
 use Mouse;
 use namespace::autoclean;
 
-use version; our $VERSION = qv('2011.07.15.1');
+use version; our $VERSION = qv('2011.07.15.2');
 
 use Modern::Perl;
-use List::Util  qw/ max /;
+use List::Util  qw/ min max /;
 
 has selector => (
     is       => 'ro',
@@ -51,6 +51,12 @@ _has_int  _first_line => 0;
 _has_int  _cursor     => 0;
 _has_str  _mode       => 'select';
 _has_bool _exit_requested => 0;
+
+sub _set_cursor {
+    my ($self, $new_cursor) = @_;
+    $self->_cursor($new_cursor) if defined $new_cursor;
+    return $new_cursor;
+}
 
 sub _build_command_table {
     my ($self) = @_;
@@ -241,29 +247,31 @@ sub _move_cursor {
     my ($self, $dir) = @_;
 
     my $curs = $self->_cursor;
-    my $new_curs = $self->selector->next_selectable($self->_cursor, $dir);
-
-    if ($new_curs == $self->_cursor) {
-        $self->_scroll_to_end($dir);
-        return 0;
-    }
-    else {
-        $self->_cursor($new_curs);
-        return 1;
-    }
+    my $new_cursor = $self->selector->next_selectable($self->_cursor, $dir);
+    $self->_set_cursor($new_cursor) or $self->_scroll_to_end($dir);
 }
 
 sub _page_up_down {
     my ($self, $dir) = @_;
 
-    my $page_size = $self->ui->height-1;
+    my $slr = $self->selector;
     my $orig_cursor = $self->_cursor;
 
-    while (abs($self->_cursor - $orig_cursor) < $page_size) {
-        if (not $self->_move_cursor($dir)) {
-            return;
-        }
-    }
+    # Multiplying by $dir makes this work both ways.
+    my $page_size = ($self->ui->height - 1) * $dir;
+
+    # Move the cursor one page (clamped)
+    $self->_cursor($self->_clamp($self->_cursor + $page_size));
+
+    # If that line is selectable, we're good
+    return if $slr->line($self->_cursor)->can_select;
+
+    # Otherwise, try the next selectable, then the previous.
+    $self->_set_cursor($slr->next_selectable($self->_cursor, $dir))
+        // $self->_set_cursor($slr->next_selectable($self->_cursor, -$dir));
+
+    # If we haven't moved, try scrolling the screen to show the remainder.
+    $self->_scroll_to_end($dir) if ($self->_cursor == $orig_cursor);
 }
 
 sub _scroll_to_end {
@@ -271,11 +279,11 @@ sub _scroll_to_end {
     my $slr = $self->selector;
 
     if ($dir < 0) {
-        $self->_cursor($slr->next_selectable(-1, +1));
+        $self->_set_cursor($slr->next_selectable(-1, +1));
         $self->_first_line(0);
     }
     else {
-        $self->_cursor($slr->next_selectable($slr->line_count, -1));
+        $self->_set_cursor($slr->next_selectable($slr->line_count, -1));
         $self->_first_line(max(0, $slr->line_count - $self->ui->height + 1));
     }
 }
@@ -290,6 +298,12 @@ sub _has_var {
         default  => $default,
         %extra,
     );
+}
+
+sub _clamp {
+    my ($self, $value) = @_;
+    my ($min, $max) = (0, $self->selector->line_count - 1);
+    return min(max($value, $min), $max);
 }
 
 
