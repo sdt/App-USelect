@@ -5,6 +5,7 @@ use namespace::autoclean;
 use Modern::Perl;
 use Curses  qw/ cbreak curs_set endwin init_pair noecho start_color /;
 use List::Util  qw/ min /;
+use List::MoreUtils  qw/ first_index /;
 use Text::Tabs qw/ expand /;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
@@ -101,7 +102,7 @@ sub update {
 sub draw {
     my ($self, $selector, $first_line, $cursor) = @_;
 
-    $self->_pre_draw($selector);
+    $self->_pre_draw($selector, $cursor);
 
     my $line_count = min($self->height - 1,
                          $selector->line_count - $first_line);
@@ -122,9 +123,9 @@ sub draw {
 }
 
 sub draw_help {
-    my ($self, $selector, $help) = @_;
+    my ($self, $selector, $help, $cursor) = @_;
 
-    $self->_pre_draw($selector);
+    $self->_pre_draw($selector, $cursor);
 
     my $x = 4;
     my $y = 2;
@@ -141,15 +142,26 @@ sub command_keys {
     return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
 }
 
+sub _selection {
+    my ($selector, $cursor) = @_;
+
+    # TODO: oh no
+    my $sel = 1;
+    while (defined ($cursor = $selector->next_selectable($cursor, -1))) {
+        $sel++;
+    }
+    return $sel;
+}
+
 sub _draw_status_line {
-    my ($self, $selector) = @_;
-    #my $y = $self->height - 1;
+    my ($self, $selector, $cursor) = @_;
 
     my $selectable = $selector->selectable_lines;
     my $selected   = $selector->selected_lines;
+    my $selection  = _selection($selector, $cursor);
 
     my $lhs = ($selectable > 0)
-            ? "Selected $selected of $selectable"
+            ? "$selection of $selectable, $selected selected"
             : 'No lines selectable';
     my $mhs = 'uselect v' . $App::USelect::VERSION; # middle-hand side :b
     my $rhs = '? for help';
@@ -174,7 +186,7 @@ sub _print_line {
     $w -= $x;
     $str = expand($str);
     if (length($str) > $w) {
-        $str = substr($str, $w);
+        $str = substr($str, 0, $w);
     }
     else {
         $str .= ' ' x ($w - length($str));
@@ -185,11 +197,11 @@ sub _print_line {
 }
 
 sub _pre_draw {
-    my ($self, $selector) = @_;
+    my ($self, $selector, $cursor) = @_;
 
     $self->_update_size;
     $self->window->erase;
-    $self->_draw_status_line($selector);
+    $self->_draw_status_line($selector, $cursor);
 }
 
 sub _post_draw {

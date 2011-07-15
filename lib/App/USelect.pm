@@ -229,7 +229,7 @@ sub _draw {
         $self->_first_line($self->_cursor - $self->ui->height + 2);
     }
 
-    given ($self->_mode) {
+    given ($self->_mode) {  # TODO: this is clunky...
 
         when ('select') {
             $self->ui->draw($self->selector, $self->_first_line,
@@ -237,7 +237,8 @@ sub _draw {
         }
 
         when('help') {
-            $self->ui->draw_help($self->selector, $self->_help_text);
+            $self->ui->draw_help($self->selector, $self->_help_text,
+                                 $self->_cursor);
         }
 
     }
