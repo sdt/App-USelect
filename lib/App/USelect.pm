@@ -2,7 +2,7 @@ package App::USelect;
 use Mouse;
 use namespace::autoclean;
 
-use version; our $VERSION = qv('2011.07.10.1');
+use version; our $VERSION = qv('2011.07.15.1');
 
 use Modern::Perl;
 use List::Util  qw/ max /;
@@ -88,6 +88,16 @@ sub _build_command_table {
             code => sub { $self->_move_cursor(+1) },
         },
 
+        cursor_pgup => {
+            help => 'page up',
+            code => sub { $self->_page_up_down(-1) },
+        },
+
+        cursor_pgdn => {
+            help => 'page dn',
+            code => sub { $self->_page_up_down(+1) },
+        },
+
         cursor_top => {
             help => 'first selectable line',
             code => sub { $self->_scroll_to_end(-1) },
@@ -151,8 +161,13 @@ sub _build_help_text {
     my ($self) = @_;
 
     my @help_items = qw(
-        exit abort - cursor_down cursor_up cursor_top cursor_bottom -
-        toggle_selection select_all deselect_all toggle_all - help
+        exit abort
+        -
+        cursor_down cursor_up cursor_pgdn cursor_pgup cursor_top cursor_bottom
+        -
+        toggle_selection select_all deselect_all toggle_all
+        -
+        help
     );
 
     my @help = (
@@ -167,7 +182,7 @@ sub _build_help_text {
             die "No help for $item" unless $command->{help};
 
             my $keys = join(', ', $self->ui->command_keys($item));
-            $help_text = sprintf('    %-12s', $keys) . $command->{help};
+            $help_text = sprintf('    %-20s', $keys) . $command->{help};
         }
         push(@help, $help_text);
     }
@@ -230,9 +245,24 @@ sub _move_cursor {
 
     if ($new_curs == $self->_cursor) {
         $self->_scroll_to_end($dir);
+        return 0;
     }
     else {
         $self->_cursor($new_curs);
+        return 1;
+    }
+}
+
+sub _page_up_down {
+    my ($self, $dir) = @_;
+
+    my $page_size = $self->ui->height-1;
+    my $orig_cursor = $self->_cursor;
+
+    while (abs($self->_cursor - $orig_cursor) < $page_size) {
+        if (not $self->_move_cursor($dir)) {
+            return;
+        }
     }
 }
 
@@ -282,7 +312,7 @@ Constructor.
 
 =head2 run
 
-Runs the pplication
+Runs the application
 
 =head1 AUTHOR
 

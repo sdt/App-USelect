@@ -28,6 +28,10 @@ has height => (
 
 my $esc = chr(27);
 my $enter = "\n";
+sub _ctrl {
+    my ($char) = @_;
+    return chr(ord($char) - ord('a') + 1);
+}
 
 my %keys_table = (
     exit                => [ $enter ],
@@ -35,6 +39,8 @@ my %keys_table = (
     resize              => [ Curses::KEY_RESIZE ],
     cursor_up           => [ Curses::KEY_UP, 'k' ],
     cursor_down         => [ Curses::KEY_DOWN, 'j' ],
+    cursor_pgup         => [ Curses::KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
+    cursor_pgdn         => [ Curses::KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
     cursor_top          => [ 'g' ],
     cursor_bottom       => [ 'G' ],
     toggle_selection    => [ ' ' ],
@@ -49,6 +55,10 @@ my %key_name = (
     $enter              => 'ENTER',
     Curses::KEY_UP      => 'UP',
     Curses::KEY_DOWN    => 'DOWN',
+    Curses::KEY_NPAGE   => 'PGDN',
+    Curses::KEY_PPAGE   => 'PGUP',
+
+    ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
 );
 
 my %key_dispatch_table;
