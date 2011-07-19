@@ -20,37 +20,27 @@ has ui => (
 );
 
 has _command_table => (
-    is       => 'ro',
-    isa      => 'HashRef',
-    init_arg => undef,
-    lazy     => 1,
-    builder  => '_build_command_table',
-);
-
-has _dispatch_table => (
-    is       => 'ro',
-    isa      => 'HashRef',
-    init_arg => undef,
-    lazy     => 1,
-    builder  => '_build_dispatch_table',
+    is         => 'ro',
+    isa        => 'HashRef',
+    init_arg   => undef,
+    lazy_build => 1,
 );
 
 has _help_text => (
-    is       => 'ro',
-    isa      => 'ArrayRef[Str]',
-    init_arg => undef,
-    lazy     => 1,
-    builder  => '_build_help_text',
+    is         => 'ro',
+    isa        => 'ArrayRef[Str]',
+    init_arg   => undef,
+    lazy_build => 1,
 );
 
 sub _has_int  { _has_var('Int',  @_) }
 sub _has_str  { _has_var('Str',  @_) }
 sub _has_bool { _has_var('Bool', @_) }
 
-_has_int  _first_line => 0;
-_has_int  _cursor     => 0;
-_has_str  _mode       => 'select';
-_has_bool _exit_requested => 0;
+_has_int  _first_line       => 0;
+_has_int  _cursor           => 0;
+_has_str  _mode             => 'select';
+_has_bool _exit_requested   => 0;
 
 sub _set_cursor {
     my ($self, $new_cursor) = @_;
@@ -58,7 +48,7 @@ sub _set_cursor {
     return $new_cursor;
 }
 
-sub _build_command_table {
+sub _build__command_table {
     my ($self) = @_;
 
     my %select_mode_table = (
@@ -163,7 +153,7 @@ sub _build_command_table {
     };
 };
 
-sub _build_help_text {
+sub _build__help_text {
     my ($self) = @_;
 
     my @help_items = qw(
