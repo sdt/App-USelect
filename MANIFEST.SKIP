@@ -1,8 +1,0 @@
-errors.err
-\.git/
-.\.*\.swp
-.*\.bak
-^Makefile$
-App-USelect-.*\.tar\.gz
-^MYMETA.yml$
-^META.yml$

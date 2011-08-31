@@ -1,8 +1,10 @@
-package App::USelect;
+package
+    App::USelect;
+
+# ABSTRACT: main application class.
+
 use Mouse;
 use namespace::autoclean;
-
-use version; our $VERSION = qv('2011.07.15.2');
 
 use Modern::Perl;
 use List::Util  qw/ min max /;
@@ -167,7 +169,7 @@ sub _build__help_text {
     );
 
     my @help = (
-        "uselect v$VERSION",
+        "uselect v$App::USelect::VERSION",
         '',
     );
 
@@ -305,10 +307,6 @@ __END__
 
 =pod
 
-=head1 NAME
-
-App::USelect.pm main application class.
-
 =head1 METHODS
 
 =head2 new( selector => $selector, ui $ui )
@@ -318,9 +316,5 @@ Constructor.
 =head2 run
 
 Runs the application
-
-=head1 AUTHOR
-
-Stephen Thirlwall <sdt@dr.com>
 
 =cut

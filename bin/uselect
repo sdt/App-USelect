@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+# PODNAME: uselect.pod
+# ABSTRACT: interactive selection filter
+
 use Modern::Perl;
 use App::USelect;
 use App::USelect::Selector;
@@ -117,10 +120,6 @@ sub detach_console {
 __END__
 
 =pod
-
-=head1 NAME
-
-uselect
 
 =head1 SYNOPSIS
 
