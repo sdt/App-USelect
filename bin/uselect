@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# PODNAME: uselect.pod
+# PODNAME: uselect
 # ABSTRACT: interactive selection filter
 
 use Modern::Perl;
@@ -95,7 +95,8 @@ sub process_options {
         "blank_lines|b"     => \$include_blanks,
         "help|h|?"          => sub { pod2usage(0) },
         "select|s=s"        => \$select_code,
-        "version|v"         => sub { say "uselect v$App::USelect::VERSION"; exit 0 },
+        "version|v"         => sub {
+            say "uselect v$App::USelect::VERSION"; exit 0 },
     );
 
     if (not GetOptions(@options_spec)) {
@@ -156,9 +157,5 @@ displayed to the user, and selected lines are written to stderr.
 fv() { vim $( find . type f | sort | fgrep "$@" | uselect ); }
 
 gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\d+:/ ); }
-
-=head1 AUTHOR
-
-Stephen Thirlwall <sdt@dr.com>
 
 =cut
