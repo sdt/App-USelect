@@ -1,6 +1,6 @@
 package App::USelect::Selector::SelectableLine;
 
-#ABSTRACT: selectable line class
+# VERSION
 
 use Mouse;
 extends 'App::USelect::Selector::Line';
@@ -18,3 +18,5 @@ has is_selected => (
 );
 
 1;
+
+# ABSTRACT: selectable line class

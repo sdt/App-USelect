@@ -1,6 +1,6 @@
 package App::USelect::UI;
 
-#ABSTRACT: Curses UI class for uselect
+# VERSION
 
 use Mouse;
 use namespace::autoclean;
@@ -223,3 +223,6 @@ sub _update_size {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+# ABSTRACT: Curses UI class for uselect
+

@@ -12,6 +12,8 @@ use Pod::Usage;
 use Try::Tiny;
 use autodie;
 
+# VERSION
+
 # Some debugging aids when things go weird
 #use Carp::Always;
 #open(STDERR, '>', '/tmp/uselect.log');

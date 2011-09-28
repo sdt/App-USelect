@@ -1,6 +1,6 @@
 package App::USelect::Selector::Line;
 
-#ABSTRACT: uselect line base class
+# VERSION
 
 use Mouse;
 
@@ -18,3 +18,5 @@ sub can_select {
 }
 
 1;
+
+# ABSTRACT: uselect line base class

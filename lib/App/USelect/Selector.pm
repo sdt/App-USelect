@@ -1,6 +1,6 @@
 package App::USelect::Selector;
 
-#ABSTRACT: manages lines
+# VERSION
 
 use Mouse;
 use Modern::Perl;
@@ -67,3 +67,5 @@ sub next_selectable {
 }
 
 1;
+
+# ABSTRACT: manages lines

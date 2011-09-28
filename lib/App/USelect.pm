@@ -1,6 +1,6 @@
 package App::USelect;
 
-# ABSTRACT: main application class.
+# VERSION
 
 use Mouse;
 use namespace::autoclean;
@@ -298,11 +298,12 @@ sub _clamp {
     return min(max($value, $min), $max);
 }
 
-
 __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+# ABSTRACT: main application class.
 
 =pod
 
