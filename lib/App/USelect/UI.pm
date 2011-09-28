@@ -1,4 +1,7 @@
 package App::USelect::UI;
+
+#ABSTRACT: Curses UI class for uselect
+
 use Mouse;
 use namespace::autoclean;
 

@@ -1,38 +1,12 @@
-package App::USelect::Selector::Line;
-use Mouse;
-
-has text => (
-    is          => 'ro',
-    isa         => 'Str',
-    required    => 1,
-);
-
-sub is_selected { 0 }
-
-sub can_select {
-    my ($self) = @_;
-    return $self->can('select');
-}
-
-package App::USelect::Selector::SelectableLine;
-use Mouse;
-extends 'App::USelect::Selector::Line';
-
-has is_selected => (
-    is          => 'rw',
-    isa         => 'Bool',
-    default     => 0,
-    traits      => ['Bool'],
-    handles     => {
-        select      => 'set',
-        deselect    => 'unset',
-        toggle      => 'toggle',
-    },
-);
-
 package App::USelect::Selector;
+
+#ABSTRACT: manages lines
+
 use Mouse;
 use Modern::Perl;
+
+use App::USelect::Selector::Line;
+use App::USelect::Selector::SelectableLine;
 
 has _text => (
     is          => 'ro',

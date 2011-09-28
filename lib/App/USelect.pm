@@ -1,5 +1,4 @@
-package
-    App::USelect;
+package App::USelect;
 
 # ABSTRACT: main application class.
 
