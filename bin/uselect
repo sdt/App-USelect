@@ -27,7 +27,7 @@ if (defined $select_code) {
     # error message this way.
 
     local $_ = ''; # silence warnings about $_ being uninitialised
-    my $usercode = eval($select_code);
+    my $usercode = eval($select_code); ## no critic ProhibitStringyEval
     if ($@) {
         # Attempt to replace the default error message with something more
         # contextual. Not sure how robust this is.
@@ -45,7 +45,7 @@ if (not $include_blanks) {
     $select_code = '/./ and (' . $select_code . ')';
 }
 
-my $select_func = eval('sub { $_ = $_[0]; ' . $select_code . '}');
+my $select_func = eval('sub { $_ = $_[0]; ' . $select_code . '}'); ## no critic ProhibitStringyEval
 pod2usage($@) if $@;    # this may still occur even if the first parse succeeded
 
 chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
