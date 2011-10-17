@@ -2,7 +2,7 @@ package App::USelect;
 use Mouse;
 use namespace::autoclean;
 
-use version; our $VERSION = qv('2011.07.15.2');
+use version; our $VERSION = qv('2011.10.17.2');
 
 use Modern::Perl;
 use List::Util  qw/ min max /;

@@ -3,7 +3,7 @@ use Mouse;
 use namespace::autoclean;
 
 use Modern::Perl;
-use Curses  qw/ cbreak curs_set endwin init_pair noecho start_color /;
+use Curses  qw/ cbreak curs_set endwin init_pair nocbreak noecho start_color /;
 use List::Util  qw/ min /;
 use Text::Tabs qw/ expand /;
 
@@ -85,6 +85,7 @@ sub BUILD {
 }
 
 sub end {
+    nocbreak;
     endwin;
 }
 
