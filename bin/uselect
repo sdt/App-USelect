@@ -79,14 +79,14 @@ finally {
     undef $display;
 };
 
-detach_console($stdout);
+#detach_console($stdout);
 
 if ($errors) {
     say STDERR 'ERROR:', $errors;
     exit 3;
 }
 
-say $_->text for $selector->selected_lines;
+say {$stdout} $_->text for $selector->selected_lines;
 
 exit ($selector->selected_lines == 0);
 
