@@ -1,8 +1,11 @@
 package App::USelect::Selector::SelectableLine;
 
+# ABSTRACT: selectable line class
 # VERSION
 
-use Mouse;
+use Any::Moose;
+use namespace::autoclean;
+
 extends 'App::USelect::Selector::Line';
 
 has is_selected => (
@@ -17,6 +20,5 @@ has is_selected => (
     },
 );
 
+__PACKAGE__->meta->make_immutable;
 1;
-
-# ABSTRACT: selectable line class

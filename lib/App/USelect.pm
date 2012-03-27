@@ -1,8 +1,9 @@
 package App::USelect;
 
+# ABSTRACT: main application class.
 # VERSION
 
-use Mouse;
+use Any::Moose;
 use namespace::autoclean;
 
 use Modern::Perl;
@@ -302,8 +303,6 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
-
-# ABSTRACT: main application class.
 
 =pod
 

@@ -1,8 +1,11 @@
 package App::USelect::Selector;
 
+# ABSTRACT: manages lines
 # VERSION
 
-use Mouse;
+use Any::Moose;
+use namespace::autoclean;
+
 use Modern::Perl;
 
 use App::USelect::Selector::Line;
@@ -66,6 +69,5 @@ sub next_selectable {
     return;
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
-
-# ABSTRACT: manages lines

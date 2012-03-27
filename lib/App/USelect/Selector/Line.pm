@@ -1,8 +1,10 @@
 package App::USelect::Selector::Line;
 
+# ABSTRACT: uselect line base class
 # VERSION
 
-use Mouse;
+use Any::Moose;
+use namespace::autoclean;
 
 has text => (
     is          => 'ro',
@@ -17,6 +19,5 @@ sub can_select {
     return $self->can('select');
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
-
-# ABSTRACT: uselect line base class

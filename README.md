@@ -10,9 +10,9 @@ version 0.001
 
 uselect [options] [select text]
 
-  options:
-     --blank_lines, -b
-        Force blank lines to be selectable.
+    options:
+       --blank_lines, -b
+          Force blank lines to be selectable.
 
     --help, -h, -?
         Show this help.
@@ -24,8 +24,8 @@ uselect [options] [select text]
     --version, -v
         Print the version and exit.
 
-  Input lines can be specified on the command line after the options, otherwise
-  they will be read from stdin.
+    Input lines can be specified on the command line after the options, otherwise
+    they will be read from stdin.
 
 # DESCRIPTION
 
