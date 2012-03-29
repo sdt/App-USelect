@@ -69,6 +69,8 @@ my %key_name = (
 my %key_dispatch_table;
 while (my ($command, $keys) = each %keys_table) {
     for my $key (@{ $keys }) {
+        die "Conflicting key definitions for $command and " . $key_dispatch_table{$key}
+            if exists $key_dispatch_table{$key};
         $key_dispatch_table{$key} = $command;
     }
 }
