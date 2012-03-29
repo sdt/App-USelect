@@ -173,7 +173,8 @@ sub _draw_status_line {
     my $lhs = ($selectable > 0)
             ? "$selection of $selectable, $selected selected"
             : 'No lines selectable';
-    my $mhs = 'uselect v' . $App::USelect::VERSION; # middle-hand side :b
+    my $version = $App::USelect::VERSION || 'DEVELOPMENT';
+    my $mhs = 'uselect v' . $version; # middle-hand side :b
     my $rhs = '? for help';
 
     my $wid = $self->width;
