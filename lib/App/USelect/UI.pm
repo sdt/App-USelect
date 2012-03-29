@@ -7,9 +7,12 @@ use Any::Moose;
 use namespace::autoclean;
 
 use Modern::Perl;
-use Curses  qw/ cbreak curs_set endwin init_pair nocbreak noecho start_color /;
-use List::Util  qw/ min /;
-use Text::Tabs qw/ expand /;
+use Curses qw(
+    cbreak curs_set endwin init_pair nocbreak noecho start_color
+    use_default_colors
+);
+use List::Util qw( min );
+use Text::Tabs qw( expand );
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
@@ -78,11 +81,12 @@ while (my ($command, $keys) = each %keys_table) {
 sub BUILD {
     my ($self, $args) = @_;
 
+    use_default_colors;
     start_color;
-    init_pair(1, Curses::COLOR_YELLOW, Curses::COLOR_BLACK);
+    init_pair(1, Curses::COLOR_YELLOW, -1);
     init_pair(2, Curses::COLOR_WHITE,  Curses::COLOR_BLUE);
     init_pair(3, Curses::COLOR_WHITE,  Curses::COLOR_RED);
-    init_pair(4, Curses::COLOR_GREEN,  Curses::COLOR_BLACK);
+    init_pair(4, Curses::COLOR_GREEN,  -1);
     noecho;
     cbreak;
     $self->window->keypad(1);
