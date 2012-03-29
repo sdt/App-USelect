@@ -10,6 +10,12 @@ use Modern::Perl;
 use Curses qw(
     cbreak curs_set endwin init_pair nocbreak noecho start_color
     use_default_colors
+
+    COLOR_PAIR A_BOLD
+    COLOR_BLACK COLOR_WHITE
+    COLOR_RED COLOR_YELLOW COLOR_GREEN COLOR_CYAN COLOR_BLUE COLOR_MAGENTA
+
+    KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
 );
 use List::Util qw( min );
 use Text::Tabs qw( expand );
@@ -44,11 +50,11 @@ sub _ctrl {
 my %keys_table = (
     exit                => [ $enter ],
     abort               => [ $esc, 'q' ],
-    resize              => [ Curses::KEY_RESIZE ],
-    cursor_up           => [ Curses::KEY_UP, 'k' ],
-    cursor_down         => [ Curses::KEY_DOWN, 'j' ],
-    cursor_pgup         => [ Curses::KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
-    cursor_pgdn         => [ Curses::KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
+    resize              => [ KEY_RESIZE ],
+    cursor_up           => [ KEY_UP, 'k' ],
+    cursor_down         => [ KEY_DOWN, 'j' ],
+    cursor_pgup         => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
+    cursor_pgdn         => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
     cursor_top          => [ 'g' ],
     cursor_bottom       => [ 'G' ],
     toggle_selection    => [ ' ' ],
@@ -59,12 +65,12 @@ my %keys_table = (
 );
 
 my %key_name = (
-    $esc                => 'ESC',
-    $enter              => 'ENTER',
-    Curses::KEY_UP      => 'UP',
-    Curses::KEY_DOWN    => 'DOWN',
-    Curses::KEY_NPAGE   => 'PGDN',
-    Curses::KEY_PPAGE   => 'PGUP',
+    $esc            => 'ESC',
+    $enter          => 'ENTER',
+    KEY_UP()        => 'UP',
+    KEY_DOWN()      => 'DOWN',
+    KEY_NPAGE()     => 'PGDN',
+    KEY_PPAGE()     => 'PGUP',
 
     ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
 );
@@ -78,15 +84,60 @@ while (my ($command, $keys) = each %keys_table) {
     }
 }
 
+# Cache and init colors on demand
+my %color_table;
+sub color {
+    my ($fg, $bg) = @_;
+    my $key = "$fg:$bg";
+
+    if (exists $color_table{$key}) {
+        return $color_table{$key};
+    }
+
+    my $index = 1 + keys %color_table;
+    init_pair($index, $fg, $bg);
+
+    return $color_table{$key} = COLOR_PAIR($index);
+}
+
+# Use solarized color names
+my %scolor_table = (
+    base03    => [ COLOR_BLACK,   A_BOLD ],
+    base02    => [ COLOR_BLACK           ],
+    base01    => [ COLOR_GREEN,   A_BOLD ],
+    base00    => [ COLOR_YELLOW,  A_BOLD ],
+    base0     => [ COLOR_BLUE,    A_BOLD ],
+    base1     => [ COLOR_CYAN,    A_BOLD ],
+    base2     => [ COLOR_WHITE           ],
+    base3     => [ COLOR_WHITE,   A_BOLD ],
+    yellow    => [ COLOR_YELLOW          ],
+    orange    => [ COLOR_RED,     A_BOLD ],
+    red       => [ COLOR_RED             ],
+    magenta   => [ COLOR_MAGENTA         ],
+    violet    => [ COLOR_MAGENTA, A_BOLD ],
+    blue      => [ COLOR_BLUE            ],
+    cyan      => [ COLOR_CYAN            ],
+    green     => [ COLOR_GREEN           ],
+    transp    => [ -1                    ],
+);
+sub scolor {
+    my ($sfg, $sbg) = @_;
+
+    my ($fgc, $fga) = @{ $scolor_table{$sfg} };
+    my ($bgc, $bga) = @{ $scolor_table{$sbg} };
+
+    die "Cannot use $sbg as a background color" if $bga;
+
+    my $attr = color($fgc, $bgc);
+    $attr |= $fga if $fga;
+    return $attr;
+}
+
 sub BUILD {
     my ($self, $args) = @_;
 
     use_default_colors;
     start_color;
-    init_pair(1, Curses::COLOR_YELLOW, -1);
-    init_pair(2, Curses::COLOR_WHITE,  Curses::COLOR_BLUE);
-    init_pair(3, Curses::COLOR_WHITE,  Curses::COLOR_RED);
-    init_pair(4, Curses::COLOR_GREEN,  -1);
     noecho;
     cbreak;
     $self->window->keypad(1);
@@ -120,8 +171,11 @@ sub draw {
     for my $y (0 .. $line_count - 1) {
         my $line_no = $y + $first_line;
         my $line = $selector->line($y + $first_line);
-        my $attr = ($line_no == $cursor) ? Curses::COLOR_PAIR(3)
-                 : $line->can('select') ? Curses::COLOR_PAIR(1) : 0;
+        my $attr = ($line_no == $cursor) ? scolor('base3',  'red')
+                 : $line->is_selected    ? scolor('orange', 'transp')
+                 : $line->can_select     ? scolor('yellow',   'transp')
+                 :                       0;
+
         my $prefix = $line->can('select') ?
                      $line->is_selected ?
                      '# ' : '. ' : '  ';
@@ -184,7 +238,7 @@ sub _draw_status_line {
     substr($msg, ($wid - length($mhs))/2, length($mhs)) = $mhs;
     substr($msg, 0, length($lhs)) = $lhs;
 
-    my $attr = Curses::COLOR_PAIR(2);
+    my $attr = scolor('base0', 'base02');
     $self->_print_line(0, $self->height-1, $attr, $msg);
 }
 
