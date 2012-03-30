@@ -20,6 +20,8 @@ use Curses qw(
 use List::Util qw( min );
 use Text::Tabs qw( expand );
 
+use App::USelect::Color::Solarized qw( solarized_color );
+
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
 has window => (
@@ -84,60 +86,6 @@ while (my ($command, $keys) = each %keys_table) {
     }
 }
 
-# Cache and init colors on demand
-my %curses_color_table;
-sub curses_color {
-    my ($fg, $bg) = @_;
-    my $key = "$fg/$bg";
-
-    if (exists $curses_color_table{$key}) {
-        return $curses_color_table{$key};
-    }
-
-    my $index = 1 + keys %curses_color_table;
-    init_pair($index, $fg, $bg);
-
-    return $curses_color_table{$key} = COLOR_PAIR($index);
-}
-
-# Use solarized color names
-my %solarized_color_table = (
-    base03    => [ COLOR_BLACK,   A_BOLD ],
-    base02    => [ COLOR_BLACK           ],
-    base01    => [ COLOR_GREEN,   A_BOLD ],
-    base00    => [ COLOR_YELLOW,  A_BOLD ],
-    base0     => [ COLOR_BLUE,    A_BOLD ],
-    base1     => [ COLOR_CYAN,    A_BOLD ],
-    base2     => [ COLOR_WHITE           ],
-    base3     => [ COLOR_WHITE,   A_BOLD ],
-    yellow    => [ COLOR_YELLOW          ],
-    orange    => [ COLOR_RED,     A_BOLD ],
-    red       => [ COLOR_RED             ],
-    magenta   => [ COLOR_MAGENTA         ],
-    violet    => [ COLOR_MAGENTA, A_BOLD ],
-    blue      => [ COLOR_BLUE            ],
-    cyan      => [ COLOR_CYAN            ],
-    green     => [ COLOR_GREEN           ],
-    transp    => [ -1                    ],
-);
-my $colors = join('|', keys %solarized_color_table);
-my $scolor_regex = qr{^ ( $colors ) / ( $colors ) $}x;
-sub scolor {
-    my ($scolor) = @_;
-
-    my ($sfg, $sbg) = ($scolor =~ $scolor_regex)
-        or die "Unknown color string $scolor";
-
-    my ($fgc, $fga) = @{ $solarized_color_table{$sfg} };
-    my ($bgc, $bga) = @{ $solarized_color_table{$sbg} };
-
-    die "Cannot use $sbg as a background color" if $bga;
-
-    my $attr = curses_color($fgc, $bgc);
-    $attr |= $fga if $fga;
-    return $attr;
-}
-
 my %color_table = (
     cursor_selected         =>  'base3/green',
     cursor_unselected       =>  'base03/green',
@@ -152,7 +100,7 @@ sub color {
     my $solarized_color = $color_table{$name}
         or die "Unknown color $name";
 
-    return scolor($solarized_color);
+    return solarized_color($solarized_color);
 }
 
 sub BUILD {
