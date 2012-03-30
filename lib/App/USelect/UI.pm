@@ -85,23 +85,23 @@ while (my ($command, $keys) = each %keys_table) {
 }
 
 # Cache and init colors on demand
-my %color_table;
-sub color {
+my %curses_color_table;
+sub curses_color {
     my ($fg, $bg) = @_;
-    my $key = "$fg:$bg";
+    my $key = "$fg/$bg";
 
-    if (exists $color_table{$key}) {
-        return $color_table{$key};
+    if (exists $curses_color_table{$key}) {
+        return $curses_color_table{$key};
     }
 
-    my $index = 1 + keys %color_table;
+    my $index = 1 + keys %curses_color_table;
     init_pair($index, $fg, $bg);
 
-    return $color_table{$key} = COLOR_PAIR($index);
+    return $curses_color_table{$key} = COLOR_PAIR($index);
 }
 
 # Use solarized color names
-my %scolor_table = (
+my %solarized_color_table = (
     base03    => [ COLOR_BLACK,   A_BOLD ],
     base02    => [ COLOR_BLACK           ],
     base01    => [ COLOR_GREEN,   A_BOLD ],
@@ -120,17 +120,39 @@ my %scolor_table = (
     green     => [ COLOR_GREEN           ],
     transp    => [ -1                    ],
 );
+my $colors = join('|', keys %solarized_color_table);
+my $scolor_regex = qr{^ ( $colors ) / ( $colors ) $}x;
 sub scolor {
-    my ($sfg, $sbg) = @_;
+    my ($scolor) = @_;
 
-    my ($fgc, $fga) = @{ $scolor_table{$sfg} };
-    my ($bgc, $bga) = @{ $scolor_table{$sbg} };
+    my ($sfg, $sbg) = ($scolor =~ $scolor_regex)
+        or die "Unknown color string $scolor";
+
+    my ($fgc, $fga) = @{ $solarized_color_table{$sfg} };
+    my ($bgc, $bga) = @{ $solarized_color_table{$sbg} };
 
     die "Cannot use $sbg as a background color" if $bga;
 
-    my $attr = color($fgc, $bgc);
+    my $attr = curses_color($fgc, $bgc);
     $attr |= $fga if $fga;
     return $attr;
+}
+
+my %color_table = (
+    cursor_selected         =>  'base3/green',
+    cursor_unselected       =>  'base03/green',
+    selectable_selected     =>  'green/transp',
+    selectable_unselected   =>  'orange/transp',
+    unselectable            =>  'transp/transp',
+    status                  =>  'base0/base02',
+);
+sub color {
+    my ($name) = @_;
+
+    my $solarized_color = $color_table{$name}
+        or die "Unknown color $name";
+
+    return scolor($solarized_color);
 }
 
 sub BUILD {
@@ -171,14 +193,17 @@ sub draw {
     for my $y (0 .. $line_count - 1) {
         my $line_no = $y + $first_line;
         my $line = $selector->line($y + $first_line);
-        my $attr = ($line_no == $cursor) ? scolor('base3',  'red')
-                 : $line->is_selected    ? scolor('orange', 'transp')
-                 : $line->can_select     ? scolor('yellow',   'transp')
-                 :                       0;
+        my $suffix = $line->is_selected ? 'selected' : 'unselected';
+        my $attr = ($line_no == $cursor) ? color("cursor_$suffix")
+                 : $line->can_select     ? color("selectable_$suffix")
+                 :                         color('unselectable')
+                 ;
 
-        my $prefix = $line->can('select') ?
-                     $line->is_selected ?
-                     '# ' : '. ' : '  ';
+        my $prefix = $line->is_selected   ? '# '
+                   : $line->can('select') ? '. '
+                   :                        '  '
+                   ;
+
         $self->_print_line(0, $y, $attr, $prefix . $line->text);
     }
     $self->window->move($cursor - $first_line, $self->width-1);
@@ -238,7 +263,7 @@ sub _draw_status_line {
     substr($msg, ($wid - length($mhs))/2, length($mhs)) = $mhs;
     substr($msg, 0, length($lhs)) = $lhs;
 
-    my $attr = scolor('base0', 'base02');
+    my $attr = color('status');
     $self->_print_line(0, $self->height-1, $attr, $msg);
 }
 
