@@ -87,10 +87,10 @@ while (my ($command, $keys) = each %keys_table) {
 }
 
 my %color_table = (
-    cursor_selected         =>  'base3/green',
-    cursor_unselected       =>  'base03/green',
-    selectable_selected     =>  'green/transp',
-    selectable_unselected   =>  'orange/transp',
+    cursor_selected         =>  'cyan/base02',
+    cursor_unselected       =>  'blue/base02',
+    selectable_selected     =>  'cyan/transp',
+    selectable_unselected   =>  'blue/transp',
     unselectable            =>  'transp/transp',
     status                  =>  'base0/base02',
 );
@@ -111,7 +111,6 @@ sub BUILD {
     noecho;
     cbreak;
     $self->window->keypad(1);
-    #curs_set(0);
     $self->_update_size;
 }
 
