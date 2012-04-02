@@ -8,12 +8,7 @@ use namespace::autoclean;
 
 use Modern::Perl;
 use Curses qw(
-    cbreak curs_set endwin init_pair nocbreak noecho start_color
-    use_default_colors
-
-    COLOR_PAIR A_BOLD
-    COLOR_BLACK COLOR_WHITE
-    COLOR_RED COLOR_YELLOW COLOR_GREEN COLOR_CYAN COLOR_BLUE COLOR_MAGENTA
+    cbreak curs_set endwin nocbreak noecho start_color use_default_colors
 
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
 );
