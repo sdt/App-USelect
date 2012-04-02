@@ -98,12 +98,12 @@ sub _build__command_table {
 
         cursor_top => {
             help => 'first selectable line',
-            code => sub { $self->_scroll_to_end(-1) },
+            code => sub { $self->_cursor_to_end(-1) },
         },
 
         cursor_bottom => {
             help => 'last selectable line',
-            code => sub { $self->_scroll_to_end(+1) },
+            code => sub { $self->_cursor_to_end(+1) },
         },
 
         toggle_selection => {
@@ -241,7 +241,7 @@ sub _move_cursor {
 
     my $curs = $self->_cursor;
     my $new_cursor = $self->selector->next_selectable($self->_cursor, $dir);
-    $self->_set_cursor($new_cursor) or $self->_scroll_to_end($dir);
+    $self->_set_cursor($new_cursor) or $self->_cursor_to_end($dir);
 }
 
 sub _page_up_down {
@@ -264,10 +264,10 @@ sub _page_up_down {
         // $self->_set_cursor($slr->next_selectable($self->_cursor, -$dir));
 
     # If we haven't moved, try scrolling the screen to show the remainder.
-    $self->_scroll_to_end($dir) if ($self->_cursor == $orig_cursor);
+    $self->_cursor_to_end($dir) if ($self->_cursor == $orig_cursor);
 }
 
-sub _scroll_to_end {
+sub _cursor_to_end {
     my ($self, $dir) = @_;
     my $slr = $self->selector;
 
