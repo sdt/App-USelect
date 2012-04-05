@@ -82,12 +82,12 @@ while (my ($command, $keys) = each %keys_table) {
 }
 
 my %color_table = (
-    cursor_selected         =>  'cyan/base02',
-    cursor_unselected       =>  'blue/base02',
-    selectable_selected     =>  'cyan/transp',
-    selectable_unselected   =>  'blue/transp',
-    unselectable            =>  'transp/transp',
-    status                  =>  'base0/base02',
+    cursor_selected         =>  'green/base02',
+    cursor_unselected       =>  'base1/base02',
+    selectable_selected     =>  'green/transp',
+    selectable_unselected   =>  'base0/transp',
+    unselectable            =>  'base01/transp',
+    status                  =>  'base1/base02',
 );
 sub color {
     my ($name) = @_;
