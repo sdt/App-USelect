@@ -1,9 +1,9 @@
 package App::USelect::UI::Curses::Color::Solarized;
+use strict;
+use warnings;
 
 # ABSTRACT: Solarized colors for uselect
 # VERSION
-
-use Modern::Perl;
 
 use App::USelect::Color::Curses qw( curses_color );
 use Curses qw(
@@ -12,7 +12,6 @@ use Curses qw(
 );
 
 use parent 'Exporter';
-
 our @EXPORT_OK = qw( solarized_color );
 
 # Use solarized color names
@@ -56,3 +55,30 @@ sub solarized_color {
 }
 
 1;
+
+__END__
+=pod
+
+=head1 FUNCTIONS
+
+=head2 solarized_color ( $color_name )
+
+Creates the appropriate curses color_pair+attribute to match the given
+solarized color pair name.
+
+Colors are specified as "fg/bg", with the colors chosen from the following:
+
+=head3 Foreground-only colors
+    base03 base01 base00 base0 base1 base3 orange violet
+
+=head3 Foreground/background colors
+    base02 base2 yellow red magenta blue cyan green transp
+
+transp is a special non-solarized value which selects the default background
+or foreground color.
+
+=head1 SEE ALSO
+
+L<http://ethanschoonover.com/solarized>
+
+=cut

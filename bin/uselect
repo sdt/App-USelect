@@ -1,11 +1,10 @@
 #!/usr/bin/env perl
+use strict;
+use warnings;
 
 # PODNAME: uselect
 # ABSTRACT: interactive selection filter
 # VERSION
-
-use strict;
-use warnings;
 
 use App::USelect qw( run );
 use Getopt::Long qw( GetOptions );
@@ -25,7 +24,6 @@ my @options_spec = (
             exit 0;
         },
 );
-
 GetOptions(@options_spec)
     or pod2usage(1);
 

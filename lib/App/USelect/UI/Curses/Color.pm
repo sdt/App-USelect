@@ -1,15 +1,15 @@
 package App::USelect::UI::Curses::Color;
+use strict;
+use warnings;
 
-# ABSTRACT: Curses color-pair handling
+# ABSTRACT: Cached on-demand color pairs for curses
 # VERSION
 
-use Modern::Perl;
 use Curses qw(
     init_pair COLOR_PAIR
 );
 
 use parent 'Exporter';
-
 our @EXPORT_OK = qw( curses_color );
 
 # Cache and init colors on demand
@@ -29,3 +29,15 @@ sub curses_color {
 }
 
 1;
+
+__END__
+=pod
+
+=head1 FUNCTIONS
+
+=head2 curses_color ( $fg, $bg )
+
+If this color pair has been created before, returns the COLOR_PAIR value for it.
+Otherwise, creates a new pair with init_pair and COLOR_PAIR.
+
+=cut

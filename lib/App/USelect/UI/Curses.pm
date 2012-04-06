@@ -1,4 +1,6 @@
 package App::USelect::UI::Curses;
+use strict;
+use warnings;
 
 # ABSTRACT: Curses UI class for uselect
 # VERSION
@@ -6,7 +8,6 @@ package App::USelect::UI::Curses;
 use Any::Moose;
 use namespace::autoclean;
 
-use Modern::Perl;
 use Curses qw(
     cbreak curs_set endwin nocbreak noecho start_color use_default_colors
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
@@ -98,6 +99,7 @@ sub _build__command_table {
         },
 
         resize => {
+            # no-op, but implement a handler to force a redraw
             code => sub { },
         },
 
@@ -204,7 +206,7 @@ sub _build__help_text {
             my $command = $self->_command_table->{select}->{$item};
             die "No help for $item" unless $command->{help};
 
-            my $keys = join(', ', $self->command_keys($item));
+            my $keys = join(', ', $self->_command_keys($item));
             $help_text = sprintf('    %-20s', $keys) . $command->{help};
         }
         push(@help, $help_text);
@@ -235,7 +237,7 @@ sub run {
 sub _update {
     my ($self) = @_;
 
-    my $command = $self->update;
+    my $command = $self->_next_command;
 
     if (my $handler = $self->_command_table->{$self->_mode}->{$command}) {
         $handler->{code}->();
@@ -253,18 +255,11 @@ sub _draw {
         $self->_first_line($self->_cursor - $self->_height + 2);
     }
 
-    given ($self->_mode) {  # TODO: this is clunky...
-
-        when ('select') {
-            $self->draw($self->selector, $self->_first_line,
-                            $self->_cursor);
-        }
-
-        when('help') {
-            $self->draw_help($self->selector, $self->_help_text,
-                                 $self->_cursor);
-        }
-
+    if ($self->_mode == 'select') {
+        $self->_draw_select($self->selector, $self->_first_line, $self->_cursor);
+    }
+    elsif ($self->_mode == 'help') {
+        $self->_draw_help($self->selector, $self->_help_text, $self->_cursor);
     }
 }
 
@@ -383,7 +378,7 @@ my %color_table = (
     unselectable            =>  'base01/transp',
     status                  =>  'base1/base02',
 );
-sub color {
+sub _color {
     my ($name) = @_;
 
     my $solarized_color = $color_table{$name}
@@ -412,7 +407,7 @@ sub _post_run {
     $self->_detach_console();
 }
 
-sub update {
+sub _next_command {
     my ($self) = @_;
 
     while (1) {
@@ -422,7 +417,7 @@ sub update {
     }
 }
 
-sub draw {
+sub _draw_select {
     my ($self, $selector, $first_line, $cursor) = @_;
 
     $self->_pre_draw($selector, $cursor);
@@ -434,9 +429,9 @@ sub draw {
         my $line_no = $y + $first_line;
         my $line = $selector->line($y + $first_line);
         my $suffix = $line->is_selected ? 'selected' : 'unselected';
-        my $attr = ($line_no == $cursor) ? color("cursor_$suffix")
-                 : $line->can_select     ? color("selectable_$suffix")
-                 :                         color('unselectable')
+        my $attr = ($line_no == $cursor) ? _color("cursor_$suffix")
+                 : $line->can_select     ? _color("selectable_$suffix")
+                 :                         _color('unselectable')
                  ;
 
         my $prefix = $line->is_selected   ? '# '
@@ -451,7 +446,7 @@ sub draw {
     $self->_post_draw($selector);
 }
 
-sub draw_help {
+sub _draw_help {
     my ($self, $selector, $help, $cursor) = @_;
 
     $self->_pre_draw($selector, $cursor);
@@ -466,12 +461,12 @@ sub draw_help {
     $self->_post_draw($selector);
 }
 
-sub command_keys {
+sub _command_keys {
     my ($self, $command) = @_;
     return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
 }
 
-sub _selection {
+sub _selection_index {
     my ($selector, $cursor) = @_;
 
     # TODO: oh no
@@ -487,7 +482,7 @@ sub _draw_status_line {
 
     my $selectable = $selector->selectable_lines;
     my $selected   = $selector->selected_lines;
-    my $selection  = _selection($selector, $cursor);
+    my $selection  = _selection_index($selector, $cursor);
 
     my $lhs = ($selectable > 0)
             ? "$selection of $selectable, $selected selected"
@@ -503,7 +498,7 @@ sub _draw_status_line {
     substr($msg, ($wid - length($mhs))/2, length($mhs)) = $mhs;
     substr($msg, 0, length($lhs)) = $lhs;
 
-    my $attr = color('status');
+    my $attr = _color('status');
     $self->_print_line(0, $self->_height-1, $attr, $msg);
 }
 
@@ -566,3 +561,22 @@ sub _detach_console {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+=pod
+
+=head1 METHODS
+
+=head2 run
+
+Run the application.
+
+=head2 has_errors
+
+True if there were errors.
+
+=head2 errors
+
+String describing any errors.
+
+=cut

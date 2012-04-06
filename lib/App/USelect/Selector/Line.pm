@@ -1,6 +1,8 @@
 package App::USelect::Selector::Line;
+use strict;
+use warnings;
 
-# ABSTRACT: uselect line base class
+# ABSTRACT: uselect base class for text lines
 # VERSION
 
 use Any::Moose;
@@ -21,3 +23,24 @@ sub can_select {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+=pod
+
+=head1 ATTRIBUTES
+
+=head2 text
+
+The text itself.
+
+=head1 METHODS
+
+=head2 is_selected()
+
+True if the the line has been selected.
+
+=head2 can_select()
+
+True if the line can be selected.
+
+=cut

@@ -1,24 +1,17 @@
 package App::USelect;
+use strict;
+use warnings;
 
 # ABSTRACT: main application class.
 # VERSION
 
-use Modern::Perl;
 use App::USelect::Selector;
 use App::USelect::UI::Curses;
 use Getopt::Long qw( GetOptionsFromArray );
 use Try::Tiny;
-use autodie;
 
 use parent 'Exporter';
-
 our @EXPORT_OK = qw( run );
-
-# VERSION
-
-# Some debugging aids when things go weird
-#use Carp::Always;
-#open(STDERR, '>', '/tmp/uselect.log');
 
 sub run {
     my ($opt, $argv) = @_;
@@ -33,7 +26,7 @@ sub run {
         );
 
     if ($selector->selectable_lines == 0) {
-        say STDERR 'No selectable lines.';
+        print STDERR "No selectable lines\n";
         return 2;
     }
 
@@ -43,10 +36,10 @@ sub run {
     $ui->run();
 
     if ($ui->has_errors) {
-        say STDERR 'ERROR:', $ui->errors;
+        print STDERR 'ERROR:', $ui->errors, "\n";
         return 3;
     }
-    say $_->text for $selector->selected_lines;
+    print($_->text, "\n") for $selector->selected_lines;
     return ($selector->selected_lines == 0);
 }
 
@@ -74,7 +67,7 @@ sub _make_select_sub {
 
     my $select_sub = eval('sub { $_ = shift; ' . $opt->{select_code} . '}'); ## no critic ProhibitStringyEval
     if ($@) {
-        say STDERR $@;
+        print STDERR $@;
         return;
     }
 
