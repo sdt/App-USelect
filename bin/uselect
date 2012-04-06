@@ -2,89 +2,13 @@
 
 # PODNAME: uselect
 # ABSTRACT: interactive selection filter
-
-use Modern::Perl;
-use App::USelect::Selector;
-use App::USelect::UI::Curses;
-use Getopt::Long;
-use Pod::Usage;
-use Try::Tiny;
-use autodie;
-
 # VERSION
 
-# Some debugging aids when things go weird
-#use Carp::Always;
-#open(STDERR, '>', '/tmp/uselect.log');
+use strict;
+use warnings;
+use App::USelect;
 
-my %opt = (
-    include_blanks  => 0,
-    select_code     => '1',
-);
-
-process_options();
-
-if (defined $opt{select_code}) {
-    # Try evaluating the user code on its own first - we can tailor a better
-    # error message this way.
-
-    local $_ = ''; # silence warnings about $_ being uninitialised
-    my $usercode = eval($opt{select_code}); ## no critic ProhibitStringyEval
-    if ($@) {
-        # Attempt to replace the default error message with something more
-        # contextual. Not sure how robust this is.
-        my $msg = $@;
-        $msg =~ s/at \(eval \d+\) line \d+/in '$opt{select_code}'/g;
-        say STDERR $msg;
-        exit 4;
-    }
-}
-
-if (not $opt{include_blanks}) {
-    $opt{select_code} = '/\S/ and (' . $opt{select_code} . ')';
-}
-
-my $select_func = eval('sub { $_ = shift; ' . $opt{select_code} . '}'); ## no critic ProhibitStringyEval
-pod2usage($@) if $@;    # this may still occur even if the first parse succeeded
-
-chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
-
-my $selector = App::USelect::Selector->new(
-        text          => \@lines,
-        is_selectable => $select_func,
-    );
-if ($selector->selectable_lines == 0) {
-    say STDERR 'No selectable lines.';
-    exit 2;
-}
-
-my $ui = App::USelect::UI::Curses->new(
-        selector => $selector
-    );
-$ui->run();
-
-if ($ui->has_errors) {
-    say STDERR 'ERROR:', $ui->errors;
-    exit 3;
-}
-say $_->text for $selector->selected_lines;
-exit ($selector->selected_lines == 0);
-
-#-------------------------------------------------------------------------------
-
-sub process_options {
-    my @options_spec = (
-        "blank_lines|b"     => \$opt{include_blanks},
-        "help|h|?"          => sub { pod2usage(0) },
-        "select|s=s"        => \$opt{select_code},
-        "version|v"         => sub {
-            say "uselect v$App::USelect::VERSION"; exit 0 },
-    );
-
-    if (not GetOptions(@options_spec)) {
-        pod2usage(1);
-    }
-}
+App::USelect->run(@ARGV);
 
 __END__
 
