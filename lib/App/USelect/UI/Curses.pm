@@ -11,7 +11,7 @@ use Curses qw(
     cbreak curs_set endwin nocbreak noecho start_color use_default_colors
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
 );
-use List::Util qw( min );
+use List::Util qw( min max );
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
