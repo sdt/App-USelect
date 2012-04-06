@@ -6,7 +6,7 @@
 use Modern::Perl;
 use App::USelect;
 use App::USelect::Selector;
-use App::USelect::UI;
+use App::USelect::UI::Curses;
 use Getopt::Long;
 use Pod::Usage;
 use Try::Tiny;
@@ -67,9 +67,8 @@ my $errors;
 my $display;
 my $error_code = 1;
 try {
-    $display = App::USelect::UI->new(selector => $selector);
-    my $uselect = App::USelect->new(selector => $selector, ui => $display);
-    $error_code = $uselect->run;
+    $display = App::USelect::UI::Curses->new(selector => $selector);
+    $error_code = $display->run;
 }
 catch {
     $errors = $_;
