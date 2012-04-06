@@ -45,6 +45,12 @@ has _help_text => (
     lazy_build => 1,
 );
 
+has _stdout => (
+    is => 'rw',
+    init_arg => undef,
+    default => sub { _attach_console() },
+);
+
 sub _has_int  { _has_var('Int',  @_) }
 sub _has_str  { _has_var('Str',  @_) }
 sub _has_bool { _has_var('Bool', @_) }
@@ -372,7 +378,7 @@ sub color {
 }
 
 sub BUILD {
-    my ($self, $args) = @_;
+    my ($self) = @_;
 
     use_default_colors;
     start_color;
@@ -383,8 +389,10 @@ sub BUILD {
 }
 
 sub end {
+    my ($self) = @_;
     nocbreak;
     endwin;
+    _detach_console($self->_stdout);
 }
 
 sub update {
@@ -522,6 +530,20 @@ sub _update_size {
     $self->_window->getmaxyx($h, $w);
     $self->_width($w);
     $self->_height($h);
+}
+
+sub _attach_console {
+    open(STDIN, '<', '/dev/tty');
+
+    open my $stdout, '>&STDOUT';
+    open(STDOUT, '>', '/dev/tty');
+
+    return $stdout;
+}
+
+sub _detach_console {
+    my ($stdout) = @_;
+    open(STDOUT, '>&', $stdout);
 }
 
 __PACKAGE__->meta->make_immutable;

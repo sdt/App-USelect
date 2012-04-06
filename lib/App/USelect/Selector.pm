@@ -18,10 +18,11 @@ has _text => (
     init_arg    => 'text',
 );
 
-has is_selectable => (
+has _is_selectable => (
     is          => 'ro',
     isa         => 'CodeRef',
     required    => 1,
+    init_arg    => 'is_selectable',
 );
 
 has lines => (
@@ -42,7 +43,7 @@ sub _build_lines {
     my ($self) = @_;
     my $build_line = sub {
         my ($text) = @_;
-        return $self->is_selectable->($text)
+        return $self->_is_selectable->($text)
                 ?  App::USelect::Selector::SelectableLine->new(text => $text)
                 :  App::USelect::Selector::Line->new(text => $text);
     };

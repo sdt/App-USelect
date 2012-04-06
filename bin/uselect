@@ -18,84 +18,62 @@ use autodie;
 #use Carp::Always;
 #open(STDERR, '>', '/tmp/uselect.log');
 
-# options
-my $include_blanks = 0;
-my $select_code;
+my %opt = (
+    include_blanks  => 1,
+    select_code     => '1',
+);
 
 process_options();
 
-if (defined $select_code) {
+if (defined $opt{select_code}) {
     # Try evaluating the user code on its own first - we can tailor a better
     # error message this way.
 
     local $_ = ''; # silence warnings about $_ being uninitialised
-    my $usercode = eval($select_code); ## no critic ProhibitStringyEval
+    my $usercode = eval($opt{select_code}); ## no critic ProhibitStringyEval
     if ($@) {
         # Attempt to replace the default error message with something more
         # contextual. Not sure how robust this is.
         my $msg = $@;
-        $msg =~ s/at \(eval \d+\) line \d+/in '$select_code'/;
+        $msg =~ s/at \(eval \d+\) line \d+/in '$opt{select_code}'/g;
         say STDERR $msg;
         exit 4;
     }
 }
-else {
-    $select_code = '1';
+
+if (not $opt{include_blanks}) {
+    $opt{select_code} = '/\S/ and (' . $opt{select_code} . ')';
 }
 
-if (not $include_blanks) {
-    $select_code = '/./ and (' . $select_code . ')';
-}
-
-my $select_func = eval('sub { $_ = $_[0]; ' . $select_code . '}'); ## no critic ProhibitStringyEval
+my $select_func = eval('sub { $_ = shift; ' . $opt{select_code} . '}'); ## no critic ProhibitStringyEval
 pod2usage($@) if $@;    # this may still occur even if the first parse succeeded
 
 chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
 
-my $selector = App::USelect::Selector->new(
+my $app = App::USelect->new(
         text          => \@lines,
         is_selectable => $select_func,
     );
-if (not $selector->selectable_lines) {
+if ($app->selectable_line_count == 0) {
     say STDERR 'No selectable lines.';
     exit 2;
 }
+$app->run();
 
-my $stdout = attach_console();
-
-my $errors;
-my $display;
-my $error_code = 1;
-try {
-    $display = App::USelect::UI::Curses->new(selector => $selector);
-    $error_code = $display->run;
-}
-catch {
-    $errors = $_;
-}
-finally {
-    $display->end;
-    undef $display;
-};
-
-#detach_console($stdout);
-
-if ($errors) {
-    say STDERR 'ERROR:', $errors;
+if ($app->has_errors) {
+    say STDERR 'ERROR:', $app->errors;
     exit 3;
 }
-
-say {$stdout} $_->text for $selector->selected_lines;
-
-exit ($selector->selected_lines == 0);
+say $_->text for $app->selected_lines;
+exit ($app->selected_line_count == 0);
 
 #-------------------------------------------------------------------------------
 
 sub process_options {
     my @options_spec = (
-        "blank_lines|b"     => \$include_blanks,
+        "blank_lines|b"     => \$opt{include_blanks},
         "help|h|?"          => sub { pod2usage(0) },
-        "select|s=s"        => \$select_code,
+        "select|s=s"        => \$opt{select_code},
         "version|v"         => sub {
             say "uselect v$App::USelect::VERSION"; exit 0 },
     );
@@ -103,20 +81,6 @@ sub process_options {
     if (not GetOptions(@options_spec)) {
         pod2usage(1);
     }
-}
-
-sub attach_console {
-    open(STDIN, '<', '/dev/tty');
-
-    open my $stdout, '>&STDOUT';
-    open(STDOUT, '>', '/dev/tty');
-
-    return $stdout;
-}
-
-sub detach_console {
-    my ($stdout) = @_;
-    open(STDOUT, '>&', $stdout);
 }
 
 __END__
@@ -155,7 +119,7 @@ displayed to the user, and selected lines are written to stderr.
 
 =head1 SERVING SUGGESTIONS
 
-fv() { vim $( find . type f | sort | fgrep "$@" | uselect ); }
+fv() { vim $( find . -type f | sort | fgrep "$@" | uselect ); }
 
 gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\d+:/ ); }
 
