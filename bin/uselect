@@ -4,7 +4,6 @@
 # ABSTRACT: interactive selection filter
 
 use Modern::Perl;
-use App::USelect;
 use App::USelect::Selector;
 use App::USelect::UI::Curses;
 use Getopt::Long;
@@ -50,22 +49,26 @@ pod2usage($@) if $@;    # this may still occur even if the first parse succeeded
 
 chomp(my @lines = @ARGV ? @ARGV : <STDIN>);
 
-my $app = App::USelect->new(
+my $selector = App::USelect::Selector->new(
         text          => \@lines,
         is_selectable => $select_func,
     );
-if ($app->selectable_line_count == 0) {
+if ($selector->selectable_lines == 0) {
     say STDERR 'No selectable lines.';
     exit 2;
 }
-$app->run();
 
-if ($app->has_errors) {
-    say STDERR 'ERROR:', $app->errors;
+my $ui = App::USelect::UI::Curses->new(
+        selector => $selector
+    );
+$ui->run();
+
+if ($ui->has_errors) {
+    say STDERR 'ERROR:', $ui->errors;
     exit 3;
 }
-say $_->text for $app->selected_lines;
-exit ($app->selected_line_count == 0);
+say $_->text for $selector->selected_lines;
+exit ($selector->selected_lines == 0);
 
 #-------------------------------------------------------------------------------
 
