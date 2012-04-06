@@ -40,20 +40,6 @@ has _window => (
     default  => sub { Curses->new },
 );
 
-has _command_table => (
-    is         => 'ro',
-    isa        => 'HashRef',
-    init_arg   => undef,
-    lazy_build => 1,
-);
-
-has _help_text => (
-    is         => 'ro',
-    isa        => 'ArrayRef[Str]',
-    init_arg   => undef,
-    lazy_build => 1,
-);
-
 has _stdout => (
     is => 'ro',
     init_arg => undef,
@@ -76,26 +62,28 @@ sub _set_cursor {
     $self->_cursor($new_cursor) if defined $new_cursor;
     return $new_cursor;
 }
-sub _build__command_table {
-    my ($self) = @_;
 
-    my %select_mode_table = (
+my %command_table = (
+
+    select => {
 
         exit => {
             help => 'select current line and exit',
             code => sub {
-                    $self->selector->line($self->_cursor)->select
-                        if not $self->selector->selected_lines;
-                    $self->_exit_requested(1);
-                },
+                my $self = shift;
+                $self->selector->line($self->_cursor)->select
+                    if not $self->selector->selected_lines;
+                $self->_exit_requested(1);
+            },
         },
 
         abort => {
             help => 'abort with no selection',
             code => sub {
-                    $_->deselect for $self->selector->selectable_lines;
-                    $self->_exit_requested(1);
-                },
+                my $self = shift;
+                $_->deselect for $self->selector->selectable_lines;
+                $self->_exit_requested(1);
+            },
         },
 
         resize => {
@@ -105,86 +93,117 @@ sub _build__command_table {
 
         cursor_up => {
             help => 'prev selectable line',
-            code => sub { $self->_move_cursor(-1) },
+            code => sub { shift->_move_cursor(-1) },
         },
 
         cursor_down => {
             help => 'next selectable line',
-            code => sub { $self->_move_cursor(+1) },
+            code => sub { shift->_move_cursor(+1) },
         },
 
         cursor_pgup => {
             help => 'page up',
-            code => sub { $self->_page_up_down(-1) },
+            code => sub { shift->_page_up_down(-1) },
         },
 
         cursor_pgdn => {
             help => 'page dn',
-            code => sub { $self->_page_up_down(+1) },
+            code => sub { shift->_page_up_down(+1) },
         },
 
         cursor_top => {
             help => 'first selectable line',
-            code => sub { $self->_cursor_to_end(-1) },
+            code => sub { shift->_cursor_to_end(-1) },
         },
 
         cursor_bottom => {
             help => 'last selectable line',
-            code => sub { $self->_cursor_to_end(+1) },
+            code => sub { shift->_cursor_to_end(+1) },
         },
 
         toggle_selection => {
             help => 'toggle selection for current line',
-            code => sub { $self->selector->line($self->_cursor)->toggle },
-
+            code => sub {
+                my $self = shift;
+                $self->selector->line($self->_cursor)->toggle;
+            },
         },
 
         select_all => {
             help => 'select all lines',
-            code => sub { $_->select for $self->selector->selectable_lines },
+            code => sub { $_->select for shift->selector->selectable_lines },
         },
 
         deselect_all => {
             help => 'deselect all lines',
-            code => sub { $_->deselect for $self->selector->selectable_lines },
+            code => sub { $_->deselect for shift->selector->selectable_lines },
         },
 
         toggle_all => {
             help => 'toggle selection for all lines',
-            code => sub { $_->toggle for $self->selector->selectable_lines },
+            code => sub { $_->toggle for shift->selector->selectable_lines },
         },
 
         help => {
             help => 'show help screen',
-            code => sub { $self->_mode('help') },
+            code => sub { shift->_mode('help') },
         },
 
-    );
+    },
 
-    my %help_mode_table = (
+    help => {
 
         exit => {
-            code => sub { $self->_mode('select') },
+            code => sub { shift->_mode('select') },
         },
         abort => {
-            code => sub { $self->_mode('select') },
+            code => sub { shift->_mode('select') },
         },
         resize => {
             code => sub { },
         },
+    },
+);
 
+my $esc = chr(27);
+my $enter = "\n";
+sub _ctrl {
+    my ($char) = @_;
+    return chr(ord($char) - ord('a') + 1);
+}
 
-    );
+my %key_name = (
+    $esc            => 'ESC',
+    $enter          => 'ENTER',
+    KEY_UP()        => 'UP',
+    KEY_DOWN()      => 'DOWN',
+    KEY_NPAGE()     => 'PGDN',
+    KEY_PPAGE()     => 'PGUP',
 
-    return {
-        select  => \%select_mode_table,
-        help    => \%help_mode_table,
-    };
-};
+    ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
+);
 
-sub _build__help_text {
-    my ($self) = @_;
+# TODO: split this out per-mode
+my %keys_table = (
+    exit                => [ $enter ],
+    abort               => [ $esc, 'q' ],
+    resize              => [ KEY_RESIZE ],
+    cursor_up           => [ KEY_UP, 'k' ],
+    cursor_down         => [ KEY_DOWN, 'j' ],
+    cursor_pgup         => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
+    cursor_pgdn         => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
+    cursor_top          => [ 'g' ],
+    cursor_bottom       => [ 'G' ],
+    toggle_selection    => [ ' ' ],
+    select_all          => [ 'a', '*' ],
+    deselect_all        => [ 'A', '-' ],
+    toggle_all          => [ 't' ],
+    help                => [ 'h', '?' ],
+);
 
+my @help_text = _build_help_text();
+
+sub _build_help_text {
     my @help_items = qw(
         exit abort
         -
@@ -195,18 +214,19 @@ sub _build__help_text {
         help
     );
 
+    my $version = $App::USelect::VERSION || 'DEVELOPMENT';
     my @help = (
-        "uselect v$App::USelect::VERSION",
+        "uselect v$version",
         '',
     );
 
     for my $item (@help_items) {
         my $help_text = '';
         if ($item ne '-') {
-            my $command = $self->_command_table->{select}->{$item};
+            my $command = $command_table{select}->{$item};
             die "No help for $item" unless $command->{help};
 
-            my $keys = join(', ', $self->_command_keys($item));
+            my $keys = join(', ', _command_keys($item));
             $help_text = sprintf('    %-20s', $keys) . $command->{help};
         }
         push(@help, $help_text);
@@ -215,7 +235,7 @@ sub _build__help_text {
     push(@help, '');
     push(@help, 'https://github.com/sdt/App-USelect');
 
-    return \@help;
+    return @help;
 }
 
 sub run {
@@ -239,8 +259,8 @@ sub _update {
 
     my $command = $self->_next_command;
 
-    if (my $handler = $self->_command_table->{$self->_mode}->{$command}) {
-        $handler->{code}->();
+    if (my $handler = $command_table{$self->_mode}->{$command}) {
+        $handler->{code}->($self);
         $self->_draw();
     }
 }
@@ -255,11 +275,11 @@ sub _draw {
         $self->_first_line($self->_cursor - $self->_height + 2);
     }
 
-    if ($self->_mode == 'select') {
+    if ($self->_mode eq 'select') {
         $self->_draw_select($self->selector, $self->_first_line, $self->_cursor);
     }
-    elsif ($self->_mode == 'help') {
-        $self->_draw_help($self->selector, $self->_help_text, $self->_cursor);
+    elsif ($self->_mode eq 'help') {
+        $self->_draw_help($self->selector, \@help_text, $self->_cursor);
     }
 }
 
@@ -326,41 +346,7 @@ sub _clamp {
     return min(max($value, $min), $max);
 }
 
-my $esc = chr(27);
-my $enter = "\n";
-sub _ctrl {
-    my ($char) = @_;
-    return chr(ord($char) - ord('a') + 1);
-}
-
-my %keys_table = (
-    exit                => [ $enter ],
-    abort               => [ $esc, 'q' ],
-    resize              => [ KEY_RESIZE ],
-    cursor_up           => [ KEY_UP, 'k' ],
-    cursor_down         => [ KEY_DOWN, 'j' ],
-    cursor_pgup         => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
-    cursor_pgdn         => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
-    cursor_top          => [ 'g' ],
-    cursor_bottom       => [ 'G' ],
-    toggle_selection    => [ ' ' ],
-    select_all          => [ 'a', '*' ],
-    deselect_all        => [ 'A', '-' ],
-    toggle_all          => [ 't' ],
-    help                => [ 'h', '?' ],
-);
-
-my %key_name = (
-    $esc            => 'ESC',
-    $enter          => 'ENTER',
-    KEY_UP()        => 'UP',
-    KEY_DOWN()      => 'DOWN',
-    KEY_NPAGE()     => 'PGDN',
-    KEY_PPAGE()     => 'PGUP',
-
-    ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
-);
-
+#TODO: split this out per-mode
 my %key_dispatch_table;
 while (my ($command, $keys) = each %keys_table) {
     for my $key (@{ $keys }) {
@@ -462,7 +448,7 @@ sub _draw_help {
 }
 
 sub _command_keys {
-    my ($self, $command) = @_;
+    my ($command) = @_;
     return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
 }
 
