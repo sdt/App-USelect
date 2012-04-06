@@ -64,8 +64,8 @@ sub _make_select_sub {
         # contextual. Not sure how robust this is.
         my $msg = $@;
         $msg =~ s/at \(eval \d+\) line \d+/in '$opt->{select_code}'/g;
-        say STDERR $msg;
-        exit 4;
+        print STDERR $msg;
+        return;
     }
 
     if (not $opt->{include_blanks}) {
