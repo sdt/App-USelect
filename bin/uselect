@@ -6,9 +6,32 @@
 
 use strict;
 use warnings;
-use App::USelect;
 
-App::USelect->run(@ARGV);
+use App::USelect qw( run );
+use Getopt::Long qw( GetOptions );
+use Pod::Usage qw( pod2usage );
+
+my %opt = (
+    include_blanks  => 0,
+    select_code     => '1',
+);
+
+my @options_spec = (
+    "blank_lines|b"     => \$opt{include_blanks},
+    "help|h|?"          => sub { pod2usage(0) },
+    "select|s=s"        => \$opt{select_code},
+    "version|v"         => sub {
+            print "uselect v$App::USelect::VERSION\n";
+            exit 0;
+        },
+);
+
+if (not GetOptions(@options_spec)) {
+    pod2usage(1);
+}
+
+my $err = run(\%opt, \@ARGV);
+exit $err;
 
 __END__
 
