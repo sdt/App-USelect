@@ -1,4 +1,4 @@
-package App::USelect::Color::Solarized;
+package App::USelect::UI::Curses::Color::Solarized;
 
 # ABSTRACT: Solarized colors for uselect
 # VERSION

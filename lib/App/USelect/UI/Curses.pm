@@ -15,7 +15,7 @@ use List::Util qw( min max );
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
-use App::USelect::Color::Solarized qw( solarized_color );
+use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 

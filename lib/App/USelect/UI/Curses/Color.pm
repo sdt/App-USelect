@@ -1,4 +1,4 @@
-package App::USelect::Color::Curses;
+package App::USelect::UI::Curses::Color;
 
 # ABSTRACT: Curses color-pair handling
 # VERSION
