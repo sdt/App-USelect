@@ -26,9 +26,8 @@ my @options_spec = (
         },
 );
 
-if (not GetOptions(@options_spec)) {
-    pod2usage(1);
-}
+GetOptions(@options_spec)
+    or pod2usage(1);
 
 my $err = run(\%opt, \@ARGV);
 exit $err;
