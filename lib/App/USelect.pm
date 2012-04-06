@@ -43,15 +43,10 @@ around BUILDARGS => sub {
 sub run {
     my ($self) = @_;
 
-    my $ui;
-    try {
-        $ui = App::USelect::UI::Curses->new(selector => $self->_selector);
-        $ui->run;
-    }
-    catch {
-        $self->_set_errors($_);
-    };
-    $ui->end;
+    my $ui = App::USelect::UI::Curses->new(selector => $self->_selector);
+    $ui->run;
+    $self->_set_errors($ui->errors)
+        if $ui->has_errors;
 }
 
 __PACKAGE__->meta->make_immutable;

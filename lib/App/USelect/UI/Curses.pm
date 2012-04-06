@@ -9,11 +9,11 @@ use namespace::autoclean;
 use Modern::Perl;
 use Curses qw(
     cbreak curs_set endwin nocbreak noecho start_color use_default_colors
-
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
 );
 use List::Util qw( min );
 use Text::Tabs qw( expand );
+use Try::Tiny;
 
 use App::USelect::Color::Solarized qw( solarized_color );
 
@@ -23,6 +23,14 @@ has selector => (
     is       => 'ro',
     isa      => 'App::USelect::Selector',
     required => 1,
+);
+
+has errors => (
+    is      => 'ro',
+    isa     => 'Str',
+    init_arg => undef,
+    predicate => 'has_errors',
+    writer => '_set_errors',
 );
 
 has _window => (
@@ -46,9 +54,9 @@ has _help_text => (
 );
 
 has _stdout => (
-    is => 'rw',
+    is => 'ro',
     init_arg => undef,
-    default => sub { _attach_console() },
+    writer => '_set_stdout',
 );
 
 sub _has_int  { _has_var('Int',  @_) }
@@ -211,10 +219,17 @@ sub _build__help_text {
 sub run {
     my ($self) = shift;
 
-    $self->_draw();
-    while (not $self->_exit_requested) {
-        $self->_update;
+    $self->_pre_run();
+    try {
+        $self->_draw();
+        while (not $self->_exit_requested) {
+            $self->_update;
+        }
     }
+    catch {
+        $self->_set_errors($_);
+    };
+    $self->_post_run();
 }
 
 sub _update {
@@ -377,22 +392,24 @@ sub color {
     return solarized_color($solarized_color);
 }
 
-sub BUILD {
+sub _pre_run {
     my ($self) = @_;
 
+    $self->_attach_console();
     use_default_colors;
     start_color;
     noecho;
     cbreak;
     $self->_window->keypad(1);
     $self->_update_size;
+    $self->_exit_requested(0);
 }
 
-sub end {
+sub _post_run {
     my ($self) = @_;
     nocbreak;
     endwin;
-    _detach_console($self->_stdout);
+    $self->_detach_console();
 }
 
 sub update {
@@ -533,17 +550,18 @@ sub _update_size {
 }
 
 sub _attach_console {
+    my ($self) = @_;
     open(STDIN, '<', '/dev/tty');
 
     open my $stdout, '>&STDOUT';
     open(STDOUT, '>', '/dev/tty');
 
-    return $stdout;
+    $self->_set_stdout($stdout);
 }
 
 sub _detach_console {
-    my ($stdout) = @_;
-    open(STDOUT, '>&', $stdout);
+    my ($self) = @_;
+    open(STDOUT, '>&', $self->_stdout);
 }
 
 __PACKAGE__->meta->make_immutable;

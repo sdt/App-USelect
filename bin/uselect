@@ -19,7 +19,7 @@ use autodie;
 #open(STDERR, '>', '/tmp/uselect.log');
 
 my %opt = (
-    include_blanks  => 1,
+    include_blanks  => 0,
     select_code     => '1',
 );
 
