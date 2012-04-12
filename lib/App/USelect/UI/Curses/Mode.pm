@@ -8,7 +8,11 @@ use warnings;
 use Any::Moose 'Role';
 use namespace::autoclean;
 
-requires qw( _build__command_table draw );
+requires qw(
+    _build__command_table
+    draw
+    get_status_text
+);
 
 #TODO: move this key business into a module
 use Curses qw( KEY_UP KEY_DOWN KEY_NPAGE KEY_PPAGE );

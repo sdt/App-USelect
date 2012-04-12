@@ -14,7 +14,7 @@ use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn );
 use List::Util qw( min max );
 use Try::Tiny;
 
-has selector => (
+has _selector => (
     is      => 'ro',
     isa     => 'App::USelect::Selector',
     init_arg => undef,
@@ -40,8 +40,8 @@ sub _build__command_table {
             keys => [ enter ],
             code => sub {
                 my $self = shift;
-                $self->selector->line($self->_cursor)->select
-                    if not $self->selector->selected_lines;
+                $self->_selector->line($self->_cursor)->select
+                    if not $self->_selector->selected_lines;
                 $self->ui->_exit_requested(1);
             },
         },
@@ -51,7 +51,7 @@ sub _build__command_table {
             keys => [ esc, 'q' ],
             code => sub {
                 my $self = shift;
-                $_->deselect for $self->selector->selectable_lines;
+                $_->deselect for $self->_selector->selectable_lines;
                 $self->ui->_exit_requested(1);
             },
         },
@@ -97,26 +97,26 @@ sub _build__command_table {
             keys => [ ' ' ],
             code => sub {
                 my $self = shift;
-                $self->selector->line($self->_cursor)->toggle;
+                $self->_selector->line($self->_cursor)->toggle;
             },
         },
 
         select_all => {
             help => 'select all lines',
             keys => [ 'a', '*' ],
-            code => sub { $_->select for shift->selector->selectable_lines },
+            code => sub { $_->select for shift->_selector->selectable_lines },
         },
 
         deselect_all => {
             help => 'deselect all lines',
             keys => [ 'A', '-' ],
-            code => sub { $_->deselect for shift->selector->selectable_lines },
+            code => sub { $_->deselect for shift->_selector->selectable_lines },
         },
 
         toggle_all => {
             help => 'toggle selection for all lines',
             keys => [ 't' ],
-            code => sub { $_->toggle for shift->selector->selectable_lines },
+            code => sub { $_->toggle for shift->_selector->selectable_lines },
         },
 
         help => {
@@ -138,11 +138,11 @@ sub draw {
     }
 
     my $line_count = min($self->ui->_height - 1,
-                         $self->selector->line_count - $self->_first_line);
+                         $self->_selector->line_count - $self->_first_line);
 
     for my $y (0 .. $line_count - 1) {
         my $line_no = $y + $self->_first_line;
-        my $line = $self->selector->line($y + $self->_first_line);
+        my $line = $self->_selector->line($y + $self->_first_line);
         my $suffix = $line->is_selected ? 'selected' : 'unselected';
         my $color = ($line_no == $self->_cursor) ? "cursor_$suffix"
                   : $line->can_select            ? "selectable_$suffix"
@@ -160,18 +160,18 @@ sub draw {
                               $self->_cursor - $self->_first_line);
 }
 
-sub _move_cursor {              #XXX: select
+sub _move_cursor {
     my ($self, $dir) = @_;
 
     my $curs = $self->_cursor;
-    my $new_cursor = $self->selector->next_selectable($self->_cursor, $dir);
+    my $new_cursor = $self->_selector->next_selectable($self->_cursor, $dir);
     $self->_set_cursor($new_cursor) or $self->_cursor_to_end($dir);
 }
 
-sub _page_up_down {             #XXX: select
+sub _page_up_down {
     my ($self, $dir) = @_;
 
-    my $slr = $self->selector;
+    my $slr = $self->_selector;
     my $orig_cursor = $self->_cursor;
 
     # Multiplying by $dir makes this work both ways.
@@ -191,9 +191,9 @@ sub _page_up_down {             #XXX: select
     $self->_cursor_to_end($dir) if ($self->_cursor == $orig_cursor);
 }
 
-sub _cursor_to_end {                #XXX: select
+sub _cursor_to_end {
     my ($self, $dir) = @_;
-    my $slr = $self->selector;
+    my $slr = $self->_selector;
 
     if ($dir < 0) {
         $self->_set_cursor($slr->next_selectable(-1, +1));
@@ -207,20 +207,34 @@ sub _cursor_to_end {                #XXX: select
 
 sub _clamp {
     my ($self, $value) = @_;
-    my ($min, $max) = (0, $self->selector->line_count - 1);
+    my ($min, $max) = (0, $self->_selector->line_count - 1);
     return min(max($value, $min), $max);
 }
 
-#XXX: This gets called by the status line, but is select
 sub _selection_index {
-    my ($selector, $cursor) = @_;
+    my ($self) = @_;
+    my $cursor = $self->_cursor;
 
-    # TODO: oh no
+    # This is a little inelegant...
     my $sel = 1;
-    while (defined ($cursor = $selector->next_selectable($cursor, -1))) {
+    while (defined ($cursor = $self->_selector->next_selectable($cursor, -1))) {
         $sel++;
     }
     return $sel;
+}
+
+sub get_status_text {
+    my ($self) = @_;
+
+    my $selectable = $self->_selector->selectable_lines;
+    my $selected   = $self->_selector->selected_lines;
+    my $selection  = $self->_selection_index;
+
+    my $lhs = ($selectable > 0)
+            ? "$selection of $selectable, $selected selected"
+            : 'No lines selectable';
+
+    return ($lhs, 'h or ? for help');
 }
 
 __PACKAGE__->meta->make_immutable;

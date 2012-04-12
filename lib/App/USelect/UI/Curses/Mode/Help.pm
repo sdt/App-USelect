@@ -35,6 +35,11 @@ sub draw {
     }
 }
 
+sub get_status_text {
+    my ($self) = @_;
+    return ( 'q or esc to exit help', '' );
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
 

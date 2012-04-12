@@ -169,31 +169,14 @@ sub _update {
     }
 }
 
-#XXX: This gets called by the status line, but is select
-sub _selection_index {
-    my ($selector, $cursor) = @_;
-
-    # TODO: oh no
-    my $sel = 1;
-    while (defined ($cursor = $selector->next_selectable($cursor, -1))) {
-        $sel++;
-    }
-    return $sel;
-}
-
 sub _draw_status_line {
-    my ($self, $selector, $cursor) = @_;
+    my ($self) = @_;
 
-    my $selectable = $selector->selectable_lines;
-    my $selected   = $selector->selected_lines;
-    my $selection  = _selection_index($selector, $cursor);
+    my ($lhs, $rhs) = $self->_mode->get_status_text;
 
-    my $lhs = ($selectable > 0)
-            ? "$selection of $selectable, $selected selected"
-            : 'No lines selectable';
+    # TODO: make mhs an optional user message
     my $version = $App::USelect::VERSION || 'DEVELOPMENT';
     my $mhs = 'uselect v' . $version; # middle-hand side :b
-    my $rhs = '? for help';
 
     my $wid = $self->_width;
 
@@ -240,7 +223,7 @@ sub _pre_draw {
 sub _post_draw {
     my ($self) = @_;
 
-    #$self->_draw_status_line($selector, $cursor);
+    $self->_draw_status_line;
     $self->_window->refresh;
 }
 
