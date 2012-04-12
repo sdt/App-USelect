@@ -8,46 +8,24 @@ use warnings;
 use Any::Moose;
 use namespace::autoclean;
 
+with 'App::USelect::UI::Curses::Mode';
+
 use Try::Tiny;
 
-has ui => (
-    is      => 'ro',
-    isa     => 'App::USelect::UI::Curses',
-);
-
-my %command_table = (
-    exit => {
-        code => sub { shift->ui->pop_mode },
-    },
-);
+sub _build__command_table {
+    # TODO: convert this to { &code, $help, @keys }
+    return {
+        exit => {
+            code => sub { shift->ui->pop_mode },
+        },
+    };
+}
 
 my $esc = chr(27);
-my $enter = "\n";
-sub _ctrl {
-    my ($char) = @_;
-    return chr(ord($char) - ord('a') + 1);
-}
-
-my %keys_table = (
-    exit => [ $esc, 'q' ],
-);
-
-#TODO: split this out per-mode
-my %key_dispatch_table;
-while (my ($command, $keys) = each %keys_table) {
-    for my $key (@{ $keys }) {
-        die "Conflicting key definitions for $command and " . $key_dispatch_table{$key}
-            if exists $key_dispatch_table{$key};
-        $key_dispatch_table{$key} = $command_table{$command}->{code};
-    }
-}
-
-sub update {
-    my ($self, $key) = @_;
-    my $command = $key_dispatch_table{$key};
-    return unless $command;
-    $command->($self);
-    return 1;
+sub _build__key_table {
+    return {
+        exit => [ $esc, 'q' ],
+    };
 }
 
 sub draw {
