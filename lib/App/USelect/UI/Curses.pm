@@ -17,6 +17,7 @@ use Text::Tabs qw( expand );
 use Try::Tiny;
 
 use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
+use App::USelect::UI::Curses::Mode::Select;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
 
@@ -34,6 +35,42 @@ has errors => (
     writer => '_set_errors',
 );
 
+has _mode_table => (
+    is      => 'ro',
+    isa     => 'HashRef',
+    default => sub { {} },
+);
+
+has _mode_stack => (
+    is      => 'ro',
+    isa     => 'ArrayRef',
+    default => sub { [ shift->_get_mode('Select') ] },
+);
+
+sub _get_mode {
+    my ($self, $name) = @_;
+    if (! exists $self->_mode_table->{$name}) {
+        my $class = 'App::USelect::UI::Curses::Mode::' . $name;
+        $self->_mode_table->{$name} = $class->new(ui => $self);
+    }
+    return $self->_mode_table->{$name};
+}
+
+sub push_mode {
+    my ($self, $mode) = @_;
+    push(@{ $self->_mode_stack }, $self->_get_mode($mode));
+}
+
+sub pop_mode {
+    my ($self) = @_;
+    pop(@{ $self->_mode_stack });
+}
+
+sub _mode {
+    my ($self) = shift;
+    return $self->_mode_stack->[-1];
+}
+
 has _window => (
     is       => 'rw',
     isa      => 'Curses',
@@ -46,110 +83,26 @@ has _stdout => (
     writer => '_set_stdout',
 );
 
-sub _has_int  { _has_var('Int',  @_) }
-sub _has_str  { _has_var('Str',  @_) }
-sub _has_bool { _has_var('Bool', @_) }
+has [qw( _width _height )] => (
+    is => 'rw',
+    isa => 'Int',
+    default => 0,
+);
 
-_has_int  _first_line       => 0;
-_has_int  _cursor           => 0;
-_has_str  _mode             => 'select';
-_has_bool _exit_requested   => 0;
-_has_int  _width            => 0;
-_has_int  _height           => 0;
+has _exit_requested => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
 
-sub _set_cursor {
+);
+
+sub _set_cursor {               #XXX: select
     my ($self, $new_cursor) = @_;
     $self->_cursor($new_cursor) if defined $new_cursor;
     return $new_cursor;
 }
 
 my %command_table = (
-
-    select => {
-
-        exit => {
-            help => 'select current line and exit',
-            code => sub {
-                my $self = shift;
-                $self->selector->line($self->_cursor)->select
-                    if not $self->selector->selected_lines;
-                $self->_exit_requested(1);
-            },
-        },
-
-        abort => {
-            help => 'abort with no selection',
-            code => sub {
-                my $self = shift;
-                $_->deselect for $self->selector->selectable_lines;
-                $self->_exit_requested(1);
-            },
-        },
-
-        resize => {
-            # no-op, but implement a handler to force a redraw
-            code => sub { },
-        },
-
-        cursor_up => {
-            help => 'prev selectable line',
-            code => sub { shift->_move_cursor(-1) },
-        },
-
-        cursor_down => {
-            help => 'next selectable line',
-            code => sub { shift->_move_cursor(+1) },
-        },
-
-        cursor_pgup => {
-            help => 'page up',
-            code => sub { shift->_page_up_down(-1) },
-        },
-
-        cursor_pgdn => {
-            help => 'page dn',
-            code => sub { shift->_page_up_down(+1) },
-        },
-
-        cursor_top => {
-            help => 'first selectable line',
-            code => sub { shift->_cursor_to_end(-1) },
-        },
-
-        cursor_bottom => {
-            help => 'last selectable line',
-            code => sub { shift->_cursor_to_end(+1) },
-        },
-
-        toggle_selection => {
-            help => 'toggle selection for current line',
-            code => sub {
-                my $self = shift;
-                $self->selector->line($self->_cursor)->toggle;
-            },
-        },
-
-        select_all => {
-            help => 'select all lines',
-            code => sub { $_->select for shift->selector->selectable_lines },
-        },
-
-        deselect_all => {
-            help => 'deselect all lines',
-            code => sub { $_->deselect for shift->selector->selectable_lines },
-        },
-
-        toggle_all => {
-            help => 'toggle selection for all lines',
-            code => sub { $_->toggle for shift->selector->selectable_lines },
-        },
-
-        help => {
-            help => 'show help screen',
-            code => sub { shift->_mode('help') },
-        },
-
-    },
 
     help => {
 
@@ -201,51 +154,14 @@ my %keys_table = (
     help                => [ 'h', '?' ],
 );
 
-my @help_text = _build_help_text();
-
-sub _build_help_text {
-    my @help_items = qw(
-        exit abort
-        -
-        cursor_down cursor_up cursor_pgdn cursor_pgup cursor_top cursor_bottom
-        -
-        toggle_selection select_all deselect_all toggle_all
-        -
-        help
-    );
-
-    my $version = $App::USelect::VERSION || 'DEVELOPMENT';
-    my @help = (
-        "uselect v$version",
-        '',
-    );
-
-    for my $item (@help_items) {
-        my $help_text = '';
-        if ($item ne '-') {
-            my $command = $command_table{select}->{$item};
-            die "No help for $item" unless $command->{help};
-
-            my $keys = join(', ', _command_keys($item));
-            $help_text = sprintf('    %-20s', $keys) . $command->{help};
-        }
-        push(@help, $help_text);
-    }
-
-    push(@help, '');
-    push(@help, 'https://github.com/sdt/App-USelect');
-
-    return @help;
-}
-
 sub run {
     my ($self) = shift;
 
     $self->_pre_run();
     try {
-        $self->_draw();
         while (not $self->_exit_requested) {
-            $self->_update;
+            $self->_draw();
+            $self->_update();
         }
     }
     catch {
@@ -254,106 +170,12 @@ sub run {
     $self->_post_run();
 }
 
-sub _update {
-    my ($self) = @_;
-
-    my $command = $self->_next_command;
-
-    if (my $handler = $command_table{$self->_mode}->{$command}) {
-        $handler->{code}->($self);
-        $self->_draw();
-    }
-}
-
 sub _draw {
     my ($self) = @_;
 
-    if ($self->_cursor < $self->_first_line) {
-        $self->_first_line($self->_cursor);
-    }
-    if ($self->_cursor >= $self->_first_line + $self->_height - 1) {
-        $self->_first_line($self->_cursor - $self->_height + 2);
-    }
-
-    if ($self->_mode eq 'select') {
-        $self->_draw_select($self->selector, $self->_first_line, $self->_cursor);
-    }
-    elsif ($self->_mode eq 'help') {
-        $self->_draw_help($self->selector, \@help_text, $self->_cursor);
-    }
-}
-
-sub _move_cursor {
-    my ($self, $dir) = @_;
-
-    my $curs = $self->_cursor;
-    my $new_cursor = $self->selector->next_selectable($self->_cursor, $dir);
-    $self->_set_cursor($new_cursor) or $self->_cursor_to_end($dir);
-}
-
-sub _page_up_down {
-    my ($self, $dir) = @_;
-
-    my $slr = $self->selector;
-    my $orig_cursor = $self->_cursor;
-
-    # Multiplying by $dir makes this work both ways.
-    my $page_size = ($self->_height - 1) * $dir;
-
-    # Move the cursor one page (clamped)
-    $self->_cursor($self->_clamp($self->_cursor + $page_size));
-
-    # If that line is selectable, we're good
-    return if $slr->line($self->_cursor)->can_select;
-
-    # Otherwise, try the next selectable, then the previous.
-    $self->_set_cursor($slr->next_selectable($self->_cursor, $dir))
-        // $self->_set_cursor($slr->next_selectable($self->_cursor, -$dir));
-
-    # If we haven't moved, try scrolling the screen to show the remainder.
-    $self->_cursor_to_end($dir) if ($self->_cursor == $orig_cursor);
-}
-
-sub _cursor_to_end {
-    my ($self, $dir) = @_;
-    my $slr = $self->selector;
-
-    if ($dir < 0) {
-        $self->_set_cursor($slr->next_selectable(-1, +1));
-        $self->_first_line(0);
-    }
-    else {
-        $self->_set_cursor($slr->next_selectable($slr->line_count, -1));
-        $self->_first_line(max(0, $slr->line_count - $self->_height + 1));
-    }
-}
-
-sub _has_var {
-    my ($type, $name, $default, %extra) = @_;
-
-    has $name => (
-        is       => 'rw',
-        isa      => $type,
-        init_arg => undef,
-        default  => $default,
-        %extra,
-    );
-}
-
-sub _clamp {
-    my ($self, $value) = @_;
-    my ($min, $max) = (0, $self->selector->line_count - 1);
-    return min(max($value, $min), $max);
-}
-
-#TODO: split this out per-mode
-my %key_dispatch_table;
-while (my ($command, $keys) = each %keys_table) {
-    for my $key (@{ $keys }) {
-        die "Conflicting key definitions for $command and " . $key_dispatch_table{$key}
-            if exists $key_dispatch_table{$key};
-        $key_dispatch_table{$key} = $command;
-    }
+    $self->_pre_draw();
+    $self->_mode->draw();
+    $self->_post_draw();
 }
 
 my %color_table = (
@@ -393,43 +215,14 @@ sub _post_run {
     $self->_detach_console();
 }
 
-sub _next_command {
+sub _update {
     my ($self) = @_;
 
     while (1) {
         my $key = $self->_window->getch;
-        my $command = $key_dispatch_table{$key};
-        return $command if defined $command;
+        return if $key eq KEY_RESIZE;
+        return if $self->_mode->update($key);
     }
-}
-
-sub _draw_select {
-    my ($self, $selector, $first_line, $cursor) = @_;
-
-    $self->_pre_draw($selector, $cursor);
-
-    my $line_count = min($self->_height - 1,
-                         $selector->line_count - $first_line);
-
-    for my $y (0 .. $line_count - 1) {
-        my $line_no = $y + $first_line;
-        my $line = $selector->line($y + $first_line);
-        my $suffix = $line->is_selected ? 'selected' : 'unselected';
-        my $attr = ($line_no == $cursor) ? _color("cursor_$suffix")
-                 : $line->can_select     ? _color("selectable_$suffix")
-                 :                         _color('unselectable')
-                 ;
-
-        my $prefix = $line->is_selected   ? '# '
-                   : $line->can('select') ? '. '
-                   :                        '  '
-                   ;
-
-        $self->_print_line(0, $y, $attr, $prefix . $line->text);
-    }
-    $self->_window->move($cursor - $first_line, $self->_width-1);
-
-    $self->_post_draw($selector);
 }
 
 sub _draw_help {
@@ -452,6 +245,7 @@ sub _command_keys {
     return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
 }
 
+#XXX: This gets called by the status line, but is select
 sub _selection_index {
     my ($selector, $cursor) = @_;
 
@@ -488,9 +282,15 @@ sub _draw_status_line {
     $self->_print_line(0, $self->_height-1, $attr, $msg);
 }
 
-sub _print_line {
-    my ($self, $x, $y, $attr, $str) = @_;
+sub move_cursor_to {
+    my ($self, $x, $y) = @_;
+    $self->_window->move($y, $x);
+}
 
+sub _print_line {
+    my ($self, $x, $y, $color, $str) = @_;
+
+    my $attr = _color($color);
     my $old_attr = $self->_window->attron($attr);
 
     my ($h, $w); $self->_window->getmaxyx($h, $w);
@@ -508,16 +308,16 @@ sub _print_line {
 }
 
 sub _pre_draw {
-    my ($self, $selector, $cursor) = @_;
+    my ($self) = @_;
 
     $self->_update_size;
     $self->_window->erase;
-    $self->_draw_status_line($selector, $cursor);
 }
 
 sub _post_draw {
-    my ($self, $selector) = @_;
+    my ($self) = @_;
 
+    #$self->_draw_status_line($selector, $cursor);
     $self->_window->refresh;
 }
 
