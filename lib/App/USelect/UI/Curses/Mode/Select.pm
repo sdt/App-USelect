@@ -9,14 +9,10 @@ use Any::Moose;
 use namespace::autoclean;
 
 use Curses qw(
-    cbreak endwin nocbreak noecho start_color use_default_colors
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE
 );
 use List::Util qw( min max );
-use Text::Tabs qw( expand );
 use Try::Tiny;
-
-use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
 
 has ui => (
     is      => 'ro',
@@ -118,7 +114,7 @@ my %command_table = (
 
     help => {
         help => 'show help screen',
-        code => sub { shift->_mode('help') },
+        code => sub { shift->ui->push_mode('Help') },
     },
 );
 
@@ -218,7 +214,7 @@ sub draw {
                    :                        '  '
                    ;
 
-        $self->ui->_print_line(0, $y, $color, $prefix . $line->text);
+        $self->ui->print_line(0, $y, $color, $prefix . $line->text);
     }
     $self->ui->move_cursor_to($self->ui->_width-1,
                               $self->_cursor - $self->_first_line);

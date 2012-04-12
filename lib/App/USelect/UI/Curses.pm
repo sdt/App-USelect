@@ -8,18 +8,18 @@ use warnings;
 use Any::Moose;
 use namespace::autoclean;
 
+BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
+
 use Curses qw(
-    cbreak curs_set endwin nocbreak noecho start_color use_default_colors
-    KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE KEY_RESIZE
+    cbreak endwin nocbreak noecho start_color use_default_colors KEY_RESIZE
 );
-use List::Util qw( min max );
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
 use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
-use App::USelect::UI::Curses::Mode::Select;
 
-BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately
+use App::USelect::UI::Curses::Mode::Help;
+use App::USelect::UI::Curses::Mode::Select;
 
 has selector => (
     is       => 'ro',
@@ -96,64 +96,6 @@ has _exit_requested => (
 
 );
 
-sub _set_cursor {               #XXX: select
-    my ($self, $new_cursor) = @_;
-    $self->_cursor($new_cursor) if defined $new_cursor;
-    return $new_cursor;
-}
-
-my %command_table = (
-
-    help => {
-
-        exit => {
-            code => sub { shift->_mode('select') },
-        },
-        abort => {
-            code => sub { shift->_mode('select') },
-        },
-        resize => {
-            code => sub { },
-        },
-    },
-);
-
-my $esc = chr(27);
-my $enter = "\n";
-sub _ctrl {
-    my ($char) = @_;
-    return chr(ord($char) - ord('a') + 1);
-}
-
-my %key_name = (
-    $esc            => 'ESC',
-    $enter          => 'ENTER',
-    KEY_UP()        => 'UP',
-    KEY_DOWN()      => 'DOWN',
-    KEY_NPAGE()     => 'PGDN',
-    KEY_PPAGE()     => 'PGUP',
-
-    ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
-);
-
-# TODO: split this out per-mode
-my %keys_table = (
-    exit                => [ $enter ],
-    abort               => [ $esc, 'q' ],
-    resize              => [ KEY_RESIZE ],
-    cursor_up           => [ KEY_UP, 'k' ],
-    cursor_down         => [ KEY_DOWN, 'j' ],
-    cursor_pgup         => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
-    cursor_pgdn         => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
-    cursor_top          => [ 'g' ],
-    cursor_bottom       => [ 'G' ],
-    toggle_selection    => [ ' ' ],
-    select_all          => [ 'a', '*' ],
-    deselect_all        => [ 'A', '-' ],
-    toggle_all          => [ 't' ],
-    help                => [ 'h', '?' ],
-);
-
 sub run {
     my ($self) = shift;
 
@@ -185,7 +127,9 @@ my %color_table = (
     selectable_unselected   =>  'base0/transp',
     unselectable            =>  'base01/transp',
     status                  =>  'base1/base02',
+    help                    =>  'transp/transp',
 );
+
 sub _color {
     my ($name) = @_;
 
@@ -225,26 +169,6 @@ sub _update {
     }
 }
 
-sub _draw_help {
-    my ($self, $selector, $help, $cursor) = @_;
-
-    $self->_pre_draw($selector, $cursor);
-
-    my $x = 4;
-    my $y = 2;
-    for my $item (@{ $help }) {
-        $self->_print_line($x, $y, 0, $item);
-        $y++;
-    }
-
-    $self->_post_draw($selector);
-}
-
-sub _command_keys {
-    my ($command) = @_;
-    return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
-}
-
 #XXX: This gets called by the status line, but is select
 sub _selection_index {
     my ($selector, $cursor) = @_;
@@ -278,8 +202,7 @@ sub _draw_status_line {
     substr($msg, ($wid - length($mhs))/2, length($mhs)) = $mhs;
     substr($msg, 0, length($lhs)) = $lhs;
 
-    my $attr = _color('status');
-    $self->_print_line(0, $self->_height-1, $attr, $msg);
+    $self->print_line(0, $self->_height-1, 'status', $msg);
 }
 
 sub move_cursor_to {
@@ -287,7 +210,7 @@ sub move_cursor_to {
     $self->_window->move($y, $x);
 }
 
-sub _print_line {
+sub print_line {
     my ($self, $x, $y, $color, $str) = @_;
 
     my $attr = _color($color);
