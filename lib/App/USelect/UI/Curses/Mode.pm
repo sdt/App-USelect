@@ -63,6 +63,8 @@ sub _build__key_dispatch_table {
 
 sub _build_help_text {
     my ($self) = @_;
+
+    #TODO: this array becomes a required builder from the consumer
     my @help_items = qw(
         exit abort
         -
@@ -73,6 +75,7 @@ sub _build_help_text {
         help
     );
 
+    #TODO: this code becomes general
     my $version = $App::USelect::VERSION || 'DEVELOPMENT';
     my @help = (
         "uselect v$version",

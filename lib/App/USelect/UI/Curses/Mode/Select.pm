@@ -10,9 +10,7 @@ use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';
 
-use Curses qw(
-    KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE
-);
+use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn );
 use List::Util qw( min max );
 use Try::Tiny;
 
@@ -35,29 +33,11 @@ sub _set_cursor {
     return $new_cursor;
 }
 
-my $esc = chr(27);
-my $enter = "\n";
-sub _ctrl {
-    my ($char) = @_;
-    return chr(ord($char) - ord('a') + 1);
-}
-
-my %key_name = (
-    $esc            => 'ESC',
-    $enter          => 'ENTER',
-    KEY_UP()        => 'UP',
-    KEY_DOWN()      => 'DOWN',
-    KEY_NPAGE()     => 'PGDN',
-    KEY_PPAGE()     => 'PGUP',
-
-    ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
-);
-
 sub _build__command_table {
     return {
         exit => {
             help => 'select current line and exit',
-            keys => [ $enter ],
+            keys => [ enter ],
             code => sub {
                 my $self = shift;
                 $self->selector->line($self->_cursor)->select
@@ -68,7 +48,7 @@ sub _build__command_table {
 
         abort => {
             help => 'abort with no selection',
-            keys => [ $esc, 'q' ],
+            keys => [ esc, 'q' ],
             code => sub {
                 my $self = shift;
                 $_->deselect for $self->selector->selectable_lines;
@@ -78,25 +58,25 @@ sub _build__command_table {
 
         cursor_up => {
             help => 'prev selectable line',
-            keys => [ KEY_UP, 'k' ],
+            keys => [ up, 'k' ],
             code => sub { shift->_move_cursor(-1) },
         },
 
         cursor_down => {
             help => 'next selectable line',
-            keys => [ KEY_DOWN, 'j' ],
+            keys => [ down, 'j' ],
             code => sub { shift->_move_cursor(+1) },
         },
 
         cursor_pgup => {
             help => 'page up',
-            keys => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
+            keys => [ pgup, _ctrl('b'), _ctrl('u') ],
             code => sub { shift->_page_up_down(-1) },
         },
 
         cursor_pgdn => {
             help => 'page dn',
-            keys => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
+            keys => [ pgdn, _ctrl('f'), _ctrl('d') ],
             code => sub { shift->_page_up_down(+1) },
         },
 
