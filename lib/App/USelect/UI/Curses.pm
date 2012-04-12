@@ -218,12 +218,12 @@ sub _pre_draw {
 
     $self->_update_size;
     $self->_window->erase;
+    $self->_draw_status_line;
 }
 
 sub _post_draw {
     my ($self) = @_;
 
-    $self->_draw_status_line;
     $self->_window->refresh;
 }
 
