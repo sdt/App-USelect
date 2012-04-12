@@ -8,16 +8,13 @@ use warnings;
 use Any::Moose;
 use namespace::autoclean;
 
+with 'App::USelect::UI::Curses::Mode';
+
 use Curses qw(
     KEY_UP KEY_DOWN KEY_PPAGE KEY_NPAGE
 );
 use List::Util qw( min max );
 use Try::Tiny;
-
-has ui => (
-    is      => 'ro',
-    isa     => 'App::USelect::UI::Curses',
-);
 
 has selector => (
     is      => 'ro',
@@ -38,86 +35,6 @@ sub _set_cursor {
     return $new_cursor;
 }
 
-my %command_table = (
-
-    exit => {
-        help => 'select current line and exit',
-        code => sub {
-            my $self = shift;
-            $self->selector->line($self->_cursor)->select
-                if not $self->selector->selected_lines;
-            $self->ui->_exit_requested(1);
-        },
-    },
-
-    abort => {
-        help => 'abort with no selection',
-        code => sub {
-            my $self = shift;
-            $_->deselect for $self->selector->selectable_lines;
-            $self->ui->_exit_requested(1);
-        },
-    },
-
-    cursor_up => {
-        help => 'prev selectable line',
-        code => sub { shift->_move_cursor(-1) },
-    },
-
-    cursor_down => {
-        help => 'next selectable line',
-        code => sub { shift->_move_cursor(+1) },
-    },
-
-    cursor_pgup => {
-        help => 'page up',
-        code => sub { shift->_page_up_down(-1) },
-    },
-
-    cursor_pgdn => {
-        help => 'page dn',
-        code => sub { shift->_page_up_down(+1) },
-    },
-
-    cursor_top => {
-        help => 'first selectable line',
-        code => sub { shift->_cursor_to_end(-1) },
-    },
-
-    cursor_bottom => {
-        help => 'last selectable line',
-        code => sub { shift->_cursor_to_end(+1) },
-    },
-
-    toggle_selection => {
-        help => 'toggle selection for current line',
-        code => sub {
-            my $self = shift;
-            $self->selector->line($self->_cursor)->toggle;
-        },
-    },
-
-    select_all => {
-        help => 'select all lines',
-        code => sub { $_->select for shift->selector->selectable_lines },
-    },
-
-    deselect_all => {
-        help => 'deselect all lines',
-        code => sub { $_->deselect for shift->selector->selectable_lines },
-    },
-
-    toggle_all => {
-        help => 'toggle selection for all lines',
-        code => sub { $_->toggle for shift->selector->selectable_lines },
-    },
-
-    help => {
-        help => 'show help screen',
-        code => sub { shift->ui->push_mode('Help') },
-    },
-);
-
 my $esc = chr(27);
 my $enter = "\n";
 sub _ctrl {
@@ -136,55 +53,98 @@ my %key_name = (
     ( map { _ctrl($_) => '^' . uc($_) } 'a'..'z' ),
 );
 
-my %keys_table = (
-    exit                => [ $enter ],
-    abort               => [ $esc, 'q' ],
-    cursor_up           => [ KEY_UP, 'k' ],
-    cursor_down         => [ KEY_DOWN, 'j' ],
-    cursor_pgup         => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
-    cursor_pgdn         => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
-    cursor_top          => [ 'g' ],
-    cursor_bottom       => [ 'G' ],
-    toggle_selection    => [ ' ' ],
-    select_all          => [ 'a', '*' ],
-    deselect_all        => [ 'A', '-' ],
-    toggle_all          => [ 't' ],
-    help                => [ 'h', '?' ],
-);
+sub _build__command_table {
+    return {
+        exit => {
+            help => 'select current line and exit',
+            keys => [ $enter ],
+            code => sub {
+                my $self = shift;
+                $self->selector->line($self->_cursor)->select
+                    if not $self->selector->selected_lines;
+                $self->ui->_exit_requested(1);
+            },
+        },
 
-sub _build_help_text {
-    my @help_items = qw(
-        exit abort
-        -
-        cursor_down cursor_up cursor_pgdn cursor_pgup cursor_top cursor_bottom
-        -
-        toggle_selection select_all deselect_all toggle_all
-        -
-        help
-    );
+        abort => {
+            help => 'abort with no selection',
+            keys => [ $esc, 'q' ],
+            code => sub {
+                my $self = shift;
+                $_->deselect for $self->selector->selectable_lines;
+                $self->ui->_exit_requested(1);
+            },
+        },
 
-    my $version = $App::USelect::VERSION || 'DEVELOPMENT';
-    my @help = (
-        "uselect v$version",
-        '',
-    );
+        cursor_up => {
+            help => 'prev selectable line',
+            keys => [ KEY_UP, 'k' ],
+            code => sub { shift->_move_cursor(-1) },
+        },
 
-    for my $item (@help_items) {
-        my $help_text = '';
-        if ($item ne '-') {
-            my $command = $command_table{select}->{$item};
-            die "No help for $item" unless $command->{help};
+        cursor_down => {
+            help => 'next selectable line',
+            keys => [ KEY_DOWN, 'j' ],
+            code => sub { shift->_move_cursor(+1) },
+        },
 
-            my $keys = join(', ', _command_keys($item));
-            $help_text = sprintf('    %-20s', $keys) . $command->{help};
-        }
-        push(@help, $help_text);
-    }
+        cursor_pgup => {
+            help => 'page up',
+            keys => [ KEY_NPAGE, _ctrl('b'), _ctrl('u') ],
+            code => sub { shift->_page_up_down(-1) },
+        },
 
-    push(@help, '');
-    push(@help, 'https://github.com/sdt/App-USelect');
+        cursor_pgdn => {
+            help => 'page dn',
+            keys => [ KEY_PPAGE, _ctrl('f'), _ctrl('d') ],
+            code => sub { shift->_page_up_down(+1) },
+        },
 
-    return @help;
+        cursor_top => {
+            help => 'first selectable line',
+            keys => [ 'g' ],
+            code => sub { shift->_cursor_to_end(-1) },
+        },
+
+        cursor_bottom => {
+            help => 'last selectable line',
+            keys => [ 'G' ],
+            code => sub { shift->_cursor_to_end(+1) },
+        },
+
+        toggle_selection => {
+            help => 'toggle selection for current line',
+            keys => [ ' ' ],
+            code => sub {
+                my $self = shift;
+                $self->selector->line($self->_cursor)->toggle;
+            },
+        },
+
+        select_all => {
+            help => 'select all lines',
+            keys => [ 'a', '*' ],
+            code => sub { $_->select for shift->selector->selectable_lines },
+        },
+
+        deselect_all => {
+            help => 'deselect all lines',
+            keys => [ 'A', '-' ],
+            code => sub { $_->deselect for shift->selector->selectable_lines },
+        },
+
+        toggle_all => {
+            help => 'toggle selection for all lines',
+            keys => [ 't' ],
+            code => sub { $_->toggle for shift->selector->selectable_lines },
+        },
+
+        help => {
+            help => 'show help screen',
+            keys => [ 'h', '?' ],
+            code => sub { shift->ui->push_mode('Help') },
+        },
+    };
 }
 
 sub draw {
@@ -269,29 +229,6 @@ sub _clamp {
     my ($self, $value) = @_;
     my ($min, $max) = (0, $self->selector->line_count - 1);
     return min(max($value, $min), $max);
-}
-
-#TODO: split this out per-mode
-my %key_dispatch_table;
-while (my ($command, $keys) = each %keys_table) {
-    for my $key (@{ $keys }) {
-        die "Conflicting key definitions for $command and " . $key_dispatch_table{$key}
-            if exists $key_dispatch_table{$key};
-        $key_dispatch_table{$key} = $command_table{$command}->{code};
-    }
-}
-
-sub update {
-    my ($self, $key) = @_;
-    my $command = $key_dispatch_table{$key};
-    return unless $command;
-    $command->($self);
-    return 1;
-}
-
-sub _command_keys {
-    my ($command) = @_;
-    return map { $key_name{$_} // $_ } @{ $keys_table{$command} };
 }
 
 #XXX: This gets called by the status line, but is select
