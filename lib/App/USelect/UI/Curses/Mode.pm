@@ -8,7 +8,7 @@ use warnings;
 use Any::Moose 'Role';
 use namespace::autoclean;
 
-requires qw( _build__key_table _build__command_table draw );
+requires qw( _build__command_table draw );
 
 #TODO: move this key business into a module
 use Curses qw( KEY_UP KEY_DOWN KEY_NPAGE KEY_PPAGE );
@@ -34,12 +34,6 @@ has ui => (
     isa     => 'App::USelect::UI::Curses',
 );
 
-has _key_table => (
-    is          => 'ro',
-    isa         => 'HashRef',
-    lazy_build  => 1,
-);
-
 has _command_table => (
     is          => 'ro',
     isa         => 'HashRef',
@@ -57,11 +51,11 @@ sub _build__key_dispatch_table {
 
     my %key_command;
 
-    while (my ($command, $keys) = each %{ $self->_key_table }) {
-        for my $key (@{ $keys }) {
-            die "Conflicting keys for $command and $key_command{$key}"
+    while (my ($name, $cmd) = each %{ $self->_command_table }) {
+        for my $key (@{ $cmd->{keys} }) {
+            die "Conflicting keys for $name and $key_command{$key}"
                 if exists $key_command{$key};
-            $key_command{$key} = $self->_command_table->{$command}->{code};
+            $key_command{$key} = $cmd->{code};
         }
     }
     return \%key_command;

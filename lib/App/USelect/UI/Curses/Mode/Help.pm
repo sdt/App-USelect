@@ -12,19 +12,15 @@ with 'App::USelect::UI::Curses::Mode';
 
 use Try::Tiny;
 
+my $esc = chr(27);
+
 sub _build__command_table {
-    # TODO: convert this to { &code, $help, @keys }
     return {
         exit => {
             code => sub { shift->ui->pop_mode },
+            keys => [ $esc, 'q' ],
+            help => 'exit this help',
         },
-    };
-}
-
-my $esc = chr(27);
-sub _build__key_table {
-    return {
-        exit => [ $esc, 'q' ],
     };
 }
 
