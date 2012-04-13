@@ -13,6 +13,12 @@ with 'App::USelect::UI::Curses::Mode';
 use App::USelect::UI::Curses::Keys qw( esc );
 use Try::Tiny;
 
+has help_text => (
+    is => 'ro',
+    isa => 'ArrayRef',
+    required => 1,
+);
+
 sub _build__command_table {
     return {
         exit => {
@@ -28,8 +34,7 @@ sub draw {
 
     my $x = 4;
     my $y = 2;
-    my $help = [qw( one two three )];
-    for my $item (@{ $help }) {
+    for my $item (@{ $self->help_text }) {
         $self->ui->print_line($x, $y, 'help', $item);
         $y++;
     }

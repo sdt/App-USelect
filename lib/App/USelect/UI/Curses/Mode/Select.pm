@@ -9,8 +9,9 @@ use Any::Moose;
 use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';
+with 'App::USelect::UI::Curses::Help';
 
-use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn );
+use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn ctrl );
 use List::Util qw( min max );
 use Try::Tiny;
 
@@ -70,13 +71,13 @@ sub _build__command_table {
 
         cursor_pgup => {
             help => 'page up',
-            keys => [ pgup, _ctrl('b'), _ctrl('u') ],
+            keys => [ pgup, ctrl('b'), ctrl('u') ],
             code => sub { shift->_page_up_down(-1) },
         },
 
         cursor_pgdn => {
             help => 'page dn',
-            keys => [ pgdn, _ctrl('f'), _ctrl('d') ],
+            keys => [ pgdn, ctrl('f'), ctrl('d') ],
             code => sub { shift->_page_up_down(+1) },
         },
 
@@ -122,7 +123,12 @@ sub _build__command_table {
         help => {
             help => 'show help screen',
             keys => [ 'h', '?' ],
-            code => sub { shift->ui->push_mode('Help') },
+            code => sub {
+                my $self = shift;
+                $self->ui->push_mode('Help',
+                    help_text => $self->help_text,
+                )
+            },
         },
     };
 }
@@ -235,6 +241,24 @@ sub get_status_text {
             : 'No lines selectable';
 
     return ($lhs, 'h or ? for help');
+}
+
+sub _build__help_items {
+    my ($self) = @_;
+
+    my @help_items = qw(
+        exit abort
+        -
+        cursor_down cursor_up cursor_pgdn cursor_pgup cursor_top cursor_bottom
+        -
+        toggle_selection select_all deselect_all toggle_all
+        -
+        help
+    );
+
+    return [
+        map { $_ eq '-' ? undef : $self->_command_table->{$_} } @help_items
+    ];
 }
 
 __PACKAGE__->meta->make_immutable;

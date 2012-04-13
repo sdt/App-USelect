@@ -35,30 +35,22 @@ has errors => (
     writer => '_set_errors',
 );
 
-has _mode_table => (
-    is      => 'ro',
-    isa     => 'HashRef',
-    default => sub { {} },
-);
-
 has _mode_stack => (
     is      => 'ro',
     isa     => 'ArrayRef',
-    default => sub { [ shift->_get_mode('Select') ] },
+    default => sub { [ shift->_new_mode('Select') ] },
 );
 
-sub _get_mode {
-    my ($self, $name) = @_;
-    if (! exists $self->_mode_table->{$name}) {
-        my $class = 'App::USelect::UI::Curses::Mode::' . $name;
-        $self->_mode_table->{$name} = $class->new(ui => $self);
-    }
-    return $self->_mode_table->{$name};
+sub _new_mode {
+    my ($self, $name, @args) = @_;
+
+    my $class = 'App::USelect::UI::Curses::Mode::' . $name;
+    return $class->new(ui => $self, @args);
 }
 
 sub push_mode {
-    my ($self, $mode) = @_;
-    push(@{ $self->_mode_stack }, $self->_get_mode($mode));
+    my ($self, $mode, @args) = @_;
+    push(@{ $self->_mode_stack }, $self->_new_mode($mode, @args));
 }
 
 sub pop_mode {

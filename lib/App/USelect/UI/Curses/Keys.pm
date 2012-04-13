@@ -26,14 +26,15 @@ sub ctrl {
 }
 
 my %key_name = (
+    ( map { ctrl($_) => '^' . uc($_) } 'a'..'z' ),
+
     esc()           => 'ESC',
     enter()         => 'ENTER',
     KEY_UP()        => 'UP',
     KEY_DOWN()      => 'DOWN',
     KEY_NPAGE()     => 'PGDN',
     KEY_PPAGE()     => 'PGUP',
-
-    ( map { ctrl($_) => '^' . uc($_) } 'a'..'z' ),
+    ' '             => 'SPACE',
 );
 
 sub key_name {
