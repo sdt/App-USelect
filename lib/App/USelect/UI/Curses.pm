@@ -11,7 +11,8 @@ use namespace::autoclean;
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
 
 use Curses qw(
-    cbreak endwin nocbreak noecho start_color use_default_colors KEY_RESIZE
+    cbreak endwin initscr nocbreak noecho start_color use_default_colors
+    refresh KEY_RESIZE
 );
 use Text::Tabs qw( expand );
 use Try::Tiny;
@@ -38,6 +39,7 @@ has errors => (
 has _mode_stack => (
     is      => 'ro',
     isa     => 'ArrayRef',
+    lazy    => 1,
     default => sub { [ shift->_new_mode('Select') ] },
 );
 
@@ -66,6 +68,7 @@ sub _mode {
 has _window => (
     is       => 'rw',
     isa      => 'Curses',
+    lazy     => 1,
     default  => sub { Curses->new },
 );
 
@@ -135,10 +138,11 @@ sub _pre_run {
     my ($self) = @_;
 
     $self->_attach_console();
+    initscr;
+    cbreak;
+    noecho;
     use_default_colors;
     start_color;
-    noecho;
-    cbreak;
     $self->_window->keypad(1);
     $self->_update_size;
     $self->_exit_requested(0);
