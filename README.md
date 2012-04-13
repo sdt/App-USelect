@@ -4,7 +4,7 @@ uselect - interactive selection filter
 
 # VERSION
 
-version 0.004
+version 0.005
 
 # SYNOPSIS
 
@@ -38,7 +38,7 @@ displayed to the user, and selected lines are written to stderr.
 
 # SERVING SUGGESTIONS
 
-fv() { vim $( find . type f | sort | fgrep "$@" | uselect ); }
+fv() { vim $( find . -type f | sort | fgrep "$@" | uselect ); }
 
 gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\d+:/ ); }
 
