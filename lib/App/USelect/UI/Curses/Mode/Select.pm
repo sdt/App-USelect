@@ -9,7 +9,7 @@ use Any::Moose;
 use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';
-with 'App::USelect::UI::Curses::Help';
+with 'App::USelect::UI::Curses::ModeHelp';
 
 use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn ctrl );
 use List::Util qw( min max );

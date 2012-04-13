@@ -1,4 +1,4 @@
-package App::USelect::UI::Curses::Help;
+package App::USelect::UI::Curses::ModeHelp;
 use strict;
 use warnings;
 
