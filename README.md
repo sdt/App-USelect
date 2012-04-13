@@ -4,7 +4,7 @@ uselect - interactive selection filter
 
 # VERSION
 
-version 0.005
+version 0.006
 
 # SYNOPSIS
 
