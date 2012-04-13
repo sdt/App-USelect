@@ -269,16 +269,12 @@ __END__
 
 =head1 METHODS
 
-=head2 run
+=head2 draw
 
-Run the application.
+Draw method for this mode.
 
-=head2 has_errors
+=head2 get_status_text
 
-True if there were errors.
-
-=head2 errors
-
-String describing any errors.
+Returns a two-element array of text for the lhs and rhs of the status bar.
 
 =cut
