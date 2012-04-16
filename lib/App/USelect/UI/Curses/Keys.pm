@@ -42,3 +42,39 @@ sub key_name {
 }
 
 1;
+__END__
+=pod
+
+=head1 FUNCTIONS
+
+=head2 key_name( $keycode )
+
+Converts a keycode back to a string name.
+
+=head2 ctrl( $key )
+
+Converts a key (eg. d) into its corresponding control-key keycode.
+
+=head1 KEYCODE CONSTANTS
+
+=over
+
+=item esc
+
+=item enter
+
+=item up
+
+=item down
+
+=item pgup
+
+=item pgdn
+
+=item ctrl
+
+=item key_name
+
+=back
+
+=cut
