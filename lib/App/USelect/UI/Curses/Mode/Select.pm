@@ -15,6 +15,10 @@ use App::USelect::UI::Curses::Keys qw( esc enter up down pgup pgdn ctrl );
 use List::Util qw( min max );
 use Try::Tiny;
 
+has '+ui' => (
+    required => 1,
+);
+
 has _selector => (
     is      => 'ro',
     isa     => 'App::USelect::Selector',

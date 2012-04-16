@@ -5,7 +5,6 @@ use warnings;
 
 use Test::Most;
 use Test::LeakTrace;
-use App::USelect::Selector;
 
 my @lines = (
     'one two three four five',
@@ -20,6 +19,7 @@ sub is_selectable {
 }
 
 my $class = 'App::USelect::Selector';
+use_ok $class;
 
 throws_ok { $class->new }
     qr/Attribute \(_text|_is_selectable\) is required/;
