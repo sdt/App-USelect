@@ -10,15 +10,11 @@ use namespace::autoclean;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
 
-use Curses qw(
-    cbreak endwin initscr nocbreak noecho start_color use_default_colors
-    refresh KEY_RESIZE
-);
+use Curses qw();
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
 use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
-
 use App::USelect::UI::Curses::Mode::Help;
 use App::USelect::UI::Curses::Mode::Select;
 
@@ -64,13 +60,6 @@ sub _mode {
     my ($self) = shift;
     return $self->_mode_stack->[-1];
 }
-
-has _window => (
-    is       => 'rw',
-    isa      => 'Curses',
-    lazy     => 1,
-    default  => sub { Curses->new },
-);
 
 has _stdout => (
     is => 'ro',
@@ -138,20 +127,20 @@ sub _pre_run {
     my ($self) = @_;
 
     $self->_attach_console();
-    initscr;
-    cbreak;
-    noecho;
-    use_default_colors;
-    start_color;
-    $self->_window->keypad(1);
+    Curses::initscr;
+    Curses::cbreak;
+    Curses::noecho;
+    Curses::use_default_colors;
+    Curses::start_color;
+    Curses::keypad(1);
     $self->_update_size;
     $self->_exit_requested(0);
 }
 
 sub _post_run {
     my ($self) = @_;
-    nocbreak;
-    endwin;
+    Curses::nocbreak;
+    Curses::endwin;
     $self->_detach_console();
 }
 
@@ -159,8 +148,8 @@ sub _update {
     my ($self) = @_;
 
     while (1) {
-        my $key = $self->_window->getch;
-        return if $key eq KEY_RESIZE;
+        my $key = Curses::getch;
+        return if $key eq Curses::KEY_RESIZE;
         return if $self->_mode->update($key);
     }
 }
@@ -186,16 +175,16 @@ sub _draw_status_line {
 
 sub move_cursor_to {
     my ($self, $x, $y) = @_;
-    $self->_window->move($y, $x);
+    Curses::move($y, $x);
 }
 
 sub print_line {
     my ($self, $x, $y, $color, $str) = @_;
 
     my $attr = _color($color);
-    my $old_attr = $self->_window->attron($attr);
+    my $old_attr = Curses::attron($attr);
 
-    my ($h, $w); $self->_window->getmaxyx($h, $w);
+    my ($h, $w); Curses::getmaxyx($h, $w);
     $w -= $x;
     $str = expand($str);
     if (length($str) > $w) {
@@ -204,30 +193,29 @@ sub print_line {
     else {
         $str .= ' ' x ($w - length($str));
     }
-    $self->_window->addstr($y, $x, $str);
+    Curses::addstr($y, $x, $str);
 
-    $self->_window->attrset($old_attr);
+    Curses::attrset($old_attr);
 }
 
 sub _pre_draw {
     my ($self) = @_;
 
     $self->_update_size;
-    $self->_window->erase;
+    Curses::erase;
     $self->_draw_status_line;
 }
 
 sub _post_draw {
     my ($self) = @_;
-
-    $self->_window->refresh;
+    Curses::refresh;
 }
 
 sub _update_size {
     my ($self) = @_;
 
     my ($h, $w);
-    $self->_window->getmaxyx($h, $w);
+    Curses::getmaxyx($h, $w);
     $self->_width($w);
     $self->_height($h);
 }
