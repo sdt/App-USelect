@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use Test::LeakTrace;
 use App::USelect::Selector;
 
 my @lines = (
@@ -36,6 +37,10 @@ lives_ok {
     $s = $class->new(text => \@lines, is_selectable => \&is_selectable)
 } 'Valid constructor lives';
 isa_ok($s, $class);
+
+no_leaks_ok {
+    $class->new(text => \@lines, is_selectable => \&is_selectable)
+};
 
 is($s->line_count, 6, 'Line count as expected');
 eq_or_diff([ map { $s->line($_)->text } (0 .. 5)], \@lines,

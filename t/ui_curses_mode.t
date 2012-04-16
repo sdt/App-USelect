@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use Test::LeakTrace;
 
 my $role = 'App::USelect::UI::Curses::Mode';
 
@@ -50,6 +51,8 @@ is($tm->last_command, 'one', 'Expected method called');
 
 ok($tm->update('2'), 'Key 2 does something');
 is($tm->last_command, 'two', 'Expected method called');
+
+no_leaks_ok { $tm = TestMode->new } 'No memory leaks';
 
 throws_ok {
     package FailMode2; use Any::Moose; with $role;
