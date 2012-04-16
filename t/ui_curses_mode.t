@@ -51,4 +51,23 @@ is($tm->last_command, 'one', 'Expected method called');
 ok($tm->update('2'), 'Key 2 does something');
 is($tm->last_command, 'two', 'Expected method called');
 
+throws_ok {
+    package FailMode2; use Any::Moose; with $role;
+    sub draw { }
+    sub get_status_text { }
+    sub _build__command_table {
+        return {
+            cmd0 => {
+                keys => [qw( a b )],
+                code => sub { },
+            },
+            cmd1 => {
+                keys => [qw( b c )],
+                code => sub { },
+            },
+        };
+    }
+    FailMode2->new;
+} qr/Conflicting key b for cmd0 and cmd1/;
+
 done_testing;
