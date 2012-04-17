@@ -137,15 +137,20 @@ sub _build__command_table {
     };
 }
 
-sub draw {
-    my ($self) = @_;
+after update => sub {
+    my $self = shift;
 
+    # If the cursor has moved off the screen, scroll so it is visible
     if ($self->_cursor < $self->_first_line) {
         $self->_first_line($self->_cursor);
     }
     if ($self->_cursor >= $self->_first_line + $self->ui->_height - 1) {
         $self->_first_line($self->_cursor - $self->ui->_height + 2);
     }
+};
+
+sub draw {
+    my ($self) = @_;
 
     my $line_count = min($self->ui->_height - 1,
                          $self->_selector->line_count - $self->_first_line);
