@@ -245,11 +245,10 @@ sub get_status_text {
     my $selected   = $self->_selector->selected_lines;
     my $selection  = $self->_selection_index;
 
-    my $lhs = ($selectable > 0)
-            ? "$selection of $selectable, $selected selected"
-            : 'No lines selectable';
-
-    return ($lhs, 'h or ? for help');
+    return (
+        "$selection of $selectable, $selected selected",
+        'h or ? for help',
+    );
 }
 
 sub _build__help_items {

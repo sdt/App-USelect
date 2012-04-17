@@ -90,6 +90,27 @@ $s->update(enter);
 is(($s->get_status_text)[0], '1 of 15, 1 selected', 'Enter does nothing if some selected');
 is($s->ui->{exit}, 3, 'Enter triggers exit');
 
+$s->update('g');
+$s->update('a');
+$s->draw();
+sub check_ui_line {
+    my ($line_no, $color, $prefix) = @_;
+    eq_or_diff($s->ui->{0}->{$line_no},
+        [ $color, $prefix . ' ' . $s->ui->selector->line($line_no)->text ],
+            "$color line drawn ok");
+}
+check_ui_line(0, cursor_selected => '#');
+check_ui_line(1, unselectable => ' ');
+check_ui_line(4, selectable_selected => '#');
+
+$s->update('A');
+$s->draw();
+check_ui_line(0, cursor_unselected => '.');
+check_ui_line(4, selectable_unselected => '.');
+
+$s->update('h');
+is($s->ui->{mode}, 'Help', 'Help mode activated ok');
+
 done_testing;
 
 #------------------------------------------------------------------------------
@@ -104,17 +125,25 @@ done_testing;
     sub _width  { 80 }
     sub _height { 25 }
     sub _exit_requested { shift->{exit}++ }
-    sub print_line {}
+    sub print_line {
+        my ($self, $x, $y, $color, $text) = @_;
+        $self->{$x}->{$y} = [ $color, $text ];
+    }
+    sub push_mode { $_[0]->{mode} = $_[1] }
     sub move_cursor_to {}
 }
 
 sub mock_ui {
     return App::USelect::UI::Curses->new(
-        selector => App::USelect::Selector->new(
-            is_selectable => sub { $_[0] !~ /^(\d+:|$)/ },
-            text => [ map { chomp ; $_ } <DATA> ],
-        )
-    );
+            selector => App::USelect::Selector->new(
+                is_selectable => sub { $_[0] !~ /^(\d+:|$)/ },
+                text => [ map {
+                my $s = $_;
+                chomp $s;
+                $s =~ s/\s+line \d.*$//;
+                $s; } <DATA> ],
+                )
+            );
 }
 
 __DATA__
