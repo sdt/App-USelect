@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Solarized colors for uselect
 # VERSION
 
-use App::USelect::Color::Curses qw( curses_color );
+use App::USelect::UI::Curses::Color qw( curses_color );
 use Curses qw(
     A_BOLD COLOR_BLACK COLOR_WHITE
     COLOR_RED COLOR_YELLOW COLOR_GREEN COLOR_CYAN COLOR_BLUE COLOR_MAGENTA
