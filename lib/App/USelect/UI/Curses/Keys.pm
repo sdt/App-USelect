@@ -38,7 +38,9 @@ my %key_name = (
 );
 
 sub key_name {
-    $key_name{$_[0]} // $_[0]
+    my $key = shift;
+    my $name = $key_name{$key};
+    return $name ? $name : $key;
 }
 
 1;

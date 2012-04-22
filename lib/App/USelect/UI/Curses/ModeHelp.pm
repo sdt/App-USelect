@@ -38,7 +38,10 @@ sub _build_help_text {
     for my $cmd (@{ $self->_help_items }) {
         my $help_text = '';
         if (defined $cmd) {
-            die "No help for $cmd" unless $cmd->{help};
+            die "No help defined for $cmd->{name}"
+                unless $cmd->{help};
+            die "No keys defined for $cmd->{name}"
+                unless $cmd->{keys} && @{ $cmd->{keys} };
 
             my $keys = join(', ', map { key_name($_) }
                 @{ $cmd->{keys} });
