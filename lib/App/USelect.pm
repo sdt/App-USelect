@@ -31,7 +31,8 @@ sub run {
     }
 
     my $ui = App::USelect::UI::Curses->new(
-            selector => $selector
+            selector => $selector,
+            message => $opt->{message},
         );
     $ui->run();
 

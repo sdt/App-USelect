@@ -10,22 +10,28 @@ use App::USelect qw( run );
 use Getopt::Long qw( GetOptions );
 use Pod::Usage qw( pod2usage );
 
+my $version = $App::USelect::VERSION || 'DEVELOPMENT';
+
 my %opt = (
+    help            => 0,
     include_blanks  => 0,
+    message         => "uselect v$version",
     select_code     => '1',
 );
 
 my @options_spec = (
     "blank_lines|b"     => \$opt{include_blanks},
-    "help|h|?"          => sub { pod2usage(0) },
+    "help|h|?"          => \$opt{help},
+    "message|m=s"       => \$opt{message},
     "select|s=s"        => \$opt{select_code},
     "version|v"         => sub {
-            print "uselect v$App::USelect::VERSION\n";
+            print "uselect v$version",
             exit 0;
         },
 );
-GetOptions(@options_spec)
-    or pod2usage(1);
+if (!GetOptions(@options_spec) || $opt{help}) {
+    pod2usage( -exitval => 1, -msg => "uselect v$version" );
+}
 
 my $err = run(\%opt, \@ARGV);
 exit $err;
@@ -44,6 +50,9 @@ uselect [options] [select text]
 
     --help, -h, -?
         Show this help.
+
+    --message <message, -m <message>
+        Specify a message to display in the status line
 
     --select <perl expression>, -s <perl expression>
         Select only those lines for which given perl expression evaluates to

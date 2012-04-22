@@ -32,6 +32,11 @@ has errors => (
     writer => '_set_errors',
 );
 
+has message => (
+    is      => 'ro',
+    isa     => 'Str',
+);
+
 has _mode_stack => (
     is      => 'ro',
     isa     => 'ArrayRef',
@@ -159,9 +164,7 @@ sub _draw_status_line {
 
     my ($lhs, $rhs) = $self->_mode->get_status_text;
 
-    # TODO: make mhs an optional user message
-    my $version = $App::USelect::VERSION || 'DEVELOPMENT';
-    my $mhs = 'uselect v' . $version; # middle-hand side :b
+    my $mhs = $self->message;
 
     my $wid = $self->_width;
 
