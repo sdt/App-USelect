@@ -5,6 +5,7 @@ use warnings;
 
 use Test::Most;
 use Test::LeakTrace;
+require Test::NoWarnings;
 
 my @lines = (
     'one two three four five',
@@ -91,4 +92,5 @@ $s->line(4)->select;
 eq_or_diff([ map { $_->text } $s->selected_lines], [ @lines[0, 4] ],
     'Selected lines as expected');
 
+Test::NoWarnings::had_no_warnings();
 done_testing;

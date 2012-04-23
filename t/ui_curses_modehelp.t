@@ -5,6 +5,7 @@ use warnings;
 
 use Test::Most;
 use Test::LeakTrace;
+require Test::NoWarnings;
 
 my $role = 'App::USelect::UI::Curses::ModeHelp';
 
@@ -60,4 +61,5 @@ $tmh = Test2->new( items => [ { name => 'cmd3', help => 'The 3rd command',
 throws_ok { $tmh->help_text }
     qr/No keys defined for cmd3/, 'Commands need keys defined on them';
 
+Test::NoWarnings::had_no_warnings();
 done_testing;

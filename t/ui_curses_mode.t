@@ -5,6 +5,7 @@ use warnings;
 
 use Test::Most;
 use Test::LeakTrace;
+require Test::NoWarnings;
 
 my $role = 'App::USelect::UI::Curses::Mode';
 
@@ -73,4 +74,5 @@ throws_ok {
     FailMode2->new;
 } qr/Conflicting key b for cmd0 and cmd1/;
 
+Test::NoWarnings::had_no_warnings();
 done_testing;

@@ -5,6 +5,8 @@ use warnings;
 
 use Test::Most;
 use Test::LeakTrace;
+require Test::NoWarnings;
+
 use App::USelect::Selector;
 use App::USelect::UI::Curses::Keys ':all';
 
@@ -111,6 +113,7 @@ check_ui_line(4, selectable_unselected => '.');
 $s->update('h');
 is($s->ui->{mode}, 'Help', 'Help mode activated ok');
 
+Test::NoWarnings::had_no_warnings();
 done_testing;
 
 #------------------------------------------------------------------------------
