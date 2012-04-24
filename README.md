@@ -4,7 +4,7 @@ uselect - interactive selection filter
 
 # VERSION
 
-version 0.006
+version 0.007
 
 # SYNOPSIS
 
@@ -16,6 +16,9 @@ uselect [options] [select text]
 
     --help, -h, -?
         Show this help.
+
+    --message <message, -m <message>
+        Specify a message to display in the status line
 
     --select <perl expression>, -s <perl expression>
         Select only those lines for which given perl expression evaluates to
