@@ -199,8 +199,9 @@ sub _page_up_down {
     return if $slr->line($self->_cursor)->can_select;
 
     # Otherwise, try the next selectable, then the previous.
-    $self->_set_cursor($slr->next_selectable($self->_cursor, $dir))
-        // $self->_set_cursor($slr->next_selectable($self->_cursor, -$dir));
+    if (!$self->_set_cursor($slr->next_selectable($self->_cursor, $dir))) {
+        $self->_set_cursor($slr->next_selectable($self->_cursor, -$dir));
+    }
 
     # If we haven't moved, try scrolling the screen to show the remainder.
     $self->_cursor_to_end($dir) if ($self->_cursor == $orig_cursor);
