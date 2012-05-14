@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Help mode for curses UI
 # VERSION
 
-use Any::Moose;
+use Mouse;
 use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';

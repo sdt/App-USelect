@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: uselect base class for text lines
 # VERSION
 
-use Any::Moose;
+use Mouse;
 use namespace::autoclean;
 
 has text => (

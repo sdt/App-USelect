@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: selectable line class
 # VERSION
 
-use Any::Moose;
+use Mouse;
 use namespace::autoclean;
 
 extends 'App::USelect::Selector::Line';

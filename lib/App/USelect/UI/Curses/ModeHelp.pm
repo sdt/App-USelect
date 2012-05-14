@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Help role for curses UI modes
 # VERSION
 
-use Any::Moose 'Role';
+use Mouse::Role;
 use namespace::autoclean;
 
 use App::USelect::UI::Curses::Keys qw( key_name );

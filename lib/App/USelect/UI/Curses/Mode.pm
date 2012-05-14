@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Select mode for curses UI
 # VERSION
 
-use Any::Moose 'Role';
+use Mouse::Role;
 use namespace::autoclean;
 
 use Carp qw( croak );

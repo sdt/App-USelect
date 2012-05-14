@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: manages lines
 # VERSION
 
-use Any::Moose;
+use Mouse;
 use namespace::autoclean;
 
 use App::USelect::Selector::Line;

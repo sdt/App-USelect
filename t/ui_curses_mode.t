@@ -10,11 +10,11 @@ require Test::NoWarnings;
 my $role = 'App::USelect::UI::Curses::Mode';
 
 throws_ok {
-    package FailMode; use Any::Moose; with $role;
+    package FailMode; use Mouse; with $role;
 } qr/'$role' requires the methods '_build__command_table', 'draw', and 'get_status_text' to be implemented/;
 
 lives_ok {
-    package TestMode; use Any::Moose; with $role;
+    package TestMode; use Mouse; with $role;
 
     has last_command => (is => 'rw');
 
@@ -56,7 +56,7 @@ is($tm->last_command, 'two', 'Expected method called');
 no_leaks_ok { $tm = TestMode->new } 'No memory leaks';
 
 throws_ok {
-    package FailMode2; use Any::Moose; with $role;
+    package FailMode2; use Mouse; with $role;
     sub draw { }
     sub get_status_text { }
     sub _build__command_table {

@@ -10,11 +10,11 @@ require Test::NoWarnings;
 my $role = 'App::USelect::UI::Curses::ModeHelp';
 
 throws_ok {
-    package Fail; use Any::Moose; with $role;
+    package Fail; use Mouse; with $role;
 } qr/'$role' requires the method '_build__help_items' to be implemented/;
 
 lives_ok {
-    package Test; use Any::Moose; with $role;
+    package Test; use Mouse; with $role;
 
     sub _build__help_items {
         return [
@@ -43,7 +43,7 @@ is(1, (grep { /b,\s*2.*The second command/ } @{ $tmh->help_text }),
     'Found help for second command');
 
 {
-    package Test2; use Any::Moose; with $role;
+    package Test2; use Mouse; with $role;
     has items => ( is => 'ro' );
     sub _build__help_items { shift->items };
 }

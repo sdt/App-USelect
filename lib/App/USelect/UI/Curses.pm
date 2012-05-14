@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Curses UI class for uselect
 # VERSION
 
-use Any::Moose;
+use Mouse;
 use namespace::autoclean;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
