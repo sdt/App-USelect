@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 has text => (
     is          => 'ro',
@@ -21,6 +20,7 @@ sub can_select {
     return $self->can('select');
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 

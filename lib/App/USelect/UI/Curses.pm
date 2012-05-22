@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
 
@@ -238,6 +237,7 @@ sub _detach_console {
     open(STDOUT, '>&', $self->_stdout);
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 

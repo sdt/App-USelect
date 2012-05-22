@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';
 with 'App::USelect::UI::Curses::ModeHelp';
@@ -270,6 +269,7 @@ sub _build__help_items {
     ];
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 

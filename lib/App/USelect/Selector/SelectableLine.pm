@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 extends 'App::USelect::Selector::Line';
 
@@ -22,6 +21,7 @@ has is_selected => (
     },
 );
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 

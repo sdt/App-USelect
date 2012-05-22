@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse::Role;
-use namespace::autoclean;
 
 use Carp qw( croak );
 

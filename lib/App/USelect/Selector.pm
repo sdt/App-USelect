@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 use App::USelect::Selector::Line;
 use App::USelect::Selector::SelectableLine;
@@ -70,6 +69,7 @@ sub next_selectable {
     return;
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 

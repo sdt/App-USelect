@@ -6,7 +6,6 @@ use warnings;
 # VERSION
 
 use Mouse;
-use namespace::autoclean;
 
 with 'App::USelect::UI::Curses::Mode';
 
@@ -45,6 +44,7 @@ sub get_status_text {
     return ( 'q or esc to exit help', '' );
 }
 
+no Mouse;
 __PACKAGE__->meta->make_immutable;
 1;
 
