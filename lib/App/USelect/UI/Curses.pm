@@ -6,6 +6,7 @@ use warnings;
 # VERSION
 
 use Mouse;
+use Mouse::Util::TypeConstraints;
 
 BEGIN { $ENV{ESCDELAY} = 0 }    # make esc key respond immediately TODO broken?
 
@@ -20,6 +21,12 @@ use App::USelect::UI::Curses::Mode::Select;
 has selector => (
     is       => 'ro',
     isa      => 'App::USelect::Selector',
+    required => 1,
+);
+
+has select_mode => (
+    is       => 'ro',
+    isa      => enum([qw( single multi )]),
     required => 1,
 );
 
@@ -40,7 +47,12 @@ has _mode_stack => (
     is      => 'ro',
     isa     => 'ArrayRef',
     lazy    => 1,
-    default => sub { [ shift->_new_mode('Select') ] },
+    default => sub {
+        my $self = shift;
+        return [
+            $self->_new_mode('Select', mode => $self->select_mode)
+        ];
+    },
 );
 
 sub _new_mode {

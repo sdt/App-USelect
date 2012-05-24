@@ -4,11 +4,11 @@ uselect - interactive selection filter
 
 # VERSION
 
-version 0.009
+version 0.010
 
 # SYNOPSIS
 
-uselect [options] [select text]
+uselect \[options\] \[select text\]
 
     options:
        --blank_lines, -b
@@ -23,6 +23,9 @@ uselect [options] [select text]
     --select <perl expression>, -s <perl expression>
         Select only those lines for which given perl expression evaluates to
         true. The input lines are passed as $_.
+
+    --single, -1
+        Single selection mode
 
     --version, -v
         Print the version and exit.
@@ -43,7 +46,7 @@ displayed to the user, and selected lines are written to stderr.
 
 fv() { vim $( find . -type f | sort | fgrep "$@" | uselect ); }
 
-gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\d+:/ ); }
+gv() { vim $( ack --heading --break "$@" | uselect -s '!/^\\d+:/ ); }
 
 # AUTHOR
 

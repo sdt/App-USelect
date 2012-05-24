@@ -6,6 +6,7 @@ use warnings;
 # VERSION
 
 use Mouse;
+use Mouse::Util::TypeConstraints;
 
 with 'App::USelect::UI::Curses::Mode';
 with 'App::USelect::UI::Curses::ModeHelp';
@@ -16,6 +17,12 @@ use Try::Tiny;
 
 has '+ui' => (
     required => 1,
+);
+
+has mode => (
+    is          => 'ro',
+    isa         => enum([qw( single multi )]),
+    required    => 1,
 );
 
 has _selector => (
@@ -38,7 +45,53 @@ sub _set_cursor {
 }
 
 sub _build__command_table {
+    my $self = shift;
+
+    my %single_mode_commands = (
+        select_line => {
+            help => 'select current line',
+            keys => [ ' ' ],
+            code => sub {
+                my $self = shift;
+                $_->deselect for $self->_selector->selected_lines;
+                $self->_selector->line($self->_cursor)->select;
+            },
+        },
+    );
+
+    my %multi_mode_commands = (
+        toggle_selection => {
+            help => 'toggle selection for current line',
+            keys => [ ' ' ],
+            code => sub {
+                my $self = shift;
+                $self->_selector->line($self->_cursor)->toggle;
+            },
+        },
+
+        select_all => {
+            help => 'select all lines',
+            keys => [ 'a', '*' ],
+            code => sub { $_->select for shift->_selector->selectable_lines },
+        },
+
+        deselect_all => {
+            help => 'deselect all lines',
+            keys => [ 'A', '-' ],
+            code => sub { $_->deselect for shift->_selector->selected_lines },
+        },
+
+        toggle_all => {
+            help => 'toggle selection for all lines',
+            keys => [ 't' ],
+            code => sub { $_->toggle for shift->_selector->selectable_lines },
+        },
+    );
+
     return {
+        $self->mode eq 'single' ?
+            %single_mode_commands : %multi_mode_commands,
+
         exit => {
             help => 'select current line and exit',
             keys => [ enter ],
@@ -94,33 +147,6 @@ sub _build__command_table {
             help => 'last selectable line',
             keys => [ 'G' ],
             code => sub { shift->_cursor_to_end(+1) },
-        },
-
-        toggle_selection => {
-            help => 'toggle selection for current line',
-            keys => [ ' ' ],
-            code => sub {
-                my $self = shift;
-                $self->_selector->line($self->_cursor)->toggle;
-            },
-        },
-
-        select_all => {
-            help => 'select all lines',
-            keys => [ 'a', '*' ],
-            code => sub { $_->select for shift->_selector->selectable_lines },
-        },
-
-        deselect_all => {
-            help => 'deselect all lines',
-            keys => [ 'A', '-' ],
-            code => sub { $_->deselect for shift->_selector->selectable_lines },
-        },
-
-        toggle_all => {
-            help => 'toggle selection for all lines',
-            keys => [ 't' ],
-            code => sub { $_->toggle for shift->_selector->selectable_lines },
         },
 
         help => {
@@ -259,10 +285,18 @@ sub _build__help_items {
         -
         cursor_down cursor_up cursor_pgdn cursor_pgup cursor_top cursor_bottom
         -
-        toggle_selection select_all deselect_all toggle_all
-        -
-        help
     );
+
+    my @single_mode_help_items = qw(
+        select_line
+    );
+
+    my @multi_mode_help_items = qw(
+        toggle_selection select_all deselect_all toggle_all
+    );
+
+    push(@help_items, $self->mode eq 'single' ? @single_mode_help_items
+                                              : @multi_mode_help_items);
 
     return [
         map { $_ eq '-' ? undef : $self->_command_table->{$_} } @help_items

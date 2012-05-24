@@ -29,7 +29,7 @@ has _command_table => (
 has _key_dispatch_table => (
     is          => 'ro',
     isa         => 'HashRef',
-    builder     => '_build__key_dispatch_table',
+    lazy_build  => 1,
 );
 
 sub _build__key_dispatch_table {

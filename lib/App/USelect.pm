@@ -33,6 +33,7 @@ sub run {
     my $ui = App::USelect::UI::Curses->new(
             selector => $selector,
             message => $opt->{message},
+            select_mode => $opt->{single_select} ? 'single' : 'multi',
         );
     $ui->run();
 

@@ -71,7 +71,8 @@ throws_ok {
             },
         };
     }
-    FailMode2->new;
+    my $fm2 = FailMode2->new;
+    $fm2->_key_dispatch_table;
 } qr/Conflicting key b for cmd0 and cmd1/;
 
 Test::NoWarnings::had_no_warnings();
