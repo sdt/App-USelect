@@ -270,4 +270,20 @@ True if there were errors.
 
 String describing any errors.
 
+=head2 push_mode( $mode_name, @args )
+
+Create new $mode using @args, and push it on the mode stack.
+
+=head2 pop_mode
+
+Pop the mode stack.
+
+=head2 print_line ($x, $y, $color, $text)
+
+Print text in color at x,y. Curses interface for the mode classes.
+
+=head2 move_cursor_to ( $x, $y )
+
+Move the cursor to x,y. Curses interface for the mode classes.
+
 =cut
