@@ -13,7 +13,7 @@ use App::USelect::UI::Curses::Keys ':all';
 my $class = 'App::USelect::UI::Curses::Mode::Select';
 use_ok $class;
 
-my %args = ( mode => 'single', ui => mock_ui() );
+my %args = ( mode => 'multi', ui => mock_ui() );
 my @required_args = sort keys %args;
 for my $required_arg (@required_args) {
     my %a = %args;
@@ -23,7 +23,7 @@ for my $required_arg (@required_args) {
 }
 
 my $s;
-lives_ok { $s = $class->new(%args) } 'Constructor lives';
+lives_ok { $s = $class->new(%args) } 'Multi-mode constructor lives';
 
 is($s->_cursor, 0, 'Cursor is at line 0');
 is($s->_first_line, 0, 'First line is 0');
@@ -72,6 +72,60 @@ eq_or_diff(\@got, \@expected, 'Cursor pgup works all the way');
 $s->update(' ');
 $s->update(down);
 $s->update(' ');
+is(($s->get_status_text)[0], '2 of 15, 2 selected', 'Toggle selection works');
+$s->update(up);
+$s->update(' ');
+is(($s->get_status_text)[0], '1 of 15, 1 selected', 'Toggle selection works');
+
+$s->update('t');
+is(($s->get_status_text)[0], '1 of 15, 14 selected', 'Toggle all works');
+
+$s->update('a');
+is(($s->get_status_text)[0], '1 of 15, 15 selected', 'Select all works');
+
+$s->update('A');
+is(($s->get_status_text)[0], '1 of 15, 0 selected', 'Deselect all works');
+
+$s->update(' ');
+$s->update(esc);
+is(($s->get_status_text)[0], '1 of 15, 0 selected', 'Escape works');
+is($s->ui->{exit}, 1, 'Escape works');
+
+$s->update(enter);
+is(($s->get_status_text)[0], '1 of 15, 1 selected', 'Enter selects one if none selected');
+is($s->ui->{exit}, 2, 'Enter triggers exit');
+
+$s->update(enter);
+is(($s->get_status_text)[0], '1 of 15, 1 selected', 'Enter does nothing if some selected');
+is($s->ui->{exit}, 3, 'Enter triggers exit');
+
+$s->update('g');
+$s->update('a');
+$s->draw();
+sub check_ui_line {
+    my ($line_no, $color, $prefix) = @_;
+    eq_or_diff($s->ui->{0}->{$line_no},
+        [ $color, $prefix . ' ' . $s->ui->selector->line($line_no)->text ],
+            "$color line drawn ok");
+}
+check_ui_line(0, cursor_selected => '#');
+check_ui_line(1, unselectable => ' ');
+check_ui_line(4, selectable_selected => '#');
+
+$s->update('A');
+$s->draw();
+check_ui_line(0, cursor_unselected => '.');
+check_ui_line(4, selectable_unselected => '.');
+
+$s->update('h');
+is($s->ui->{mode}, 'Help', 'Help mode activated ok');
+
+lives_ok { $s = $class->new(ui => mock_ui(), mode => 'single') }
+    'Single-mode ctor lives';
+
+$s->update(' ');
+$s->update(down);
+$s->update(' ');
 is(($s->get_status_text)[0], '2 of 15, 1 selected', 'Set selection works');
 $s->update(up);
 $s->update(' ');
@@ -89,9 +143,6 @@ is($s->ui->{exit}, 2, 'Enter triggers exit');
 $s->update(enter);
 is(($s->get_status_text)[0], '1 of 15, 1 selected', 'Enter does nothing if some selected');
 is($s->ui->{exit}, 3, 'Enter triggers exit');
-
-$s->update('h');
-is($s->ui->{mode}, 'Help', 'Help mode activated ok');
 
 Test::NoWarnings::had_no_warnings();
 done_testing;
