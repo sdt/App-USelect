@@ -27,7 +27,7 @@ my @options_spec = (
     "select|s=s"        => \$opt{select_code},
     "single|1"          => \$opt{single_select},
     "version|v"         => sub {
-            print "uselect v$version",
+            print "uselect v$version\n";
             exit 0;
         },
 );
