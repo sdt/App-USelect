@@ -38,6 +38,11 @@ has [qw( _first_line _cursor )] => (
     default => 0,
 );
 
+sub BUILD {
+    my ($self) = @_;
+    $self->update('g');
+}
+
 sub _set_cursor {
     my ($self, $new_cursor) = @_;
     $self->_cursor($new_cursor) if defined $new_cursor;
