@@ -25,47 +25,47 @@ for my $required_arg (@required_args) {
 my $s;
 lives_ok { $s = $class->new(%args) } 'Multi-mode constructor lives';
 
-is($s->_cursor, 0, 'Cursor is at line 0');
+is($s->_cursor, 2, 'Cursor is at line 2');
 is($s->_first_line, 0, 'First line is 0');
 is(($s->get_status_text)[0], '1 of 15, 0 selected', 'Status is correct');
 
 lives_ok { $s->update('k') } 'Cursor up';
-is($s->_cursor, 0, 'Cursor is at line 0');
+is($s->_cursor, 2, 'Cursor is at line 0');
 
 lives_ok { $s->update('j') } 'Cursor down';
-is($s->_cursor, 4, 'Cursor is at line 4');
+is($s->_cursor, 6, 'Cursor is at line 6');
 is($s->_first_line, 0, 'First line is 0');
 is(($s->get_status_text)[0], '2 of 15, 0 selected', 'Status is correct');
 
 lives_ok { $s->update('G') } 'Cursor end';
-is($s->_cursor, 120, 'Cursor is at line 120');
-is($s->_first_line, 101, 'First line is 101');
+is($s->_cursor, 122, 'Cursor is at line 122');
+is($s->_first_line, 103, 'First line is 103');
 is(($s->get_status_text)[0], '15 of 15, 0 selected', 'Status is correct');
 
 lives_ok { $s->update('g') } 'Cursor home';
-is($s->_cursor, 0, 'Cursor is at line 0');
+is($s->_cursor, 2, 'Cursor is at line 2');
 is($s->_first_line, 0, 'First line is 0');
 is(($s->get_status_text)[0], '1 of 15, 0 selected', 'Status is correct');
 
 sub clamp { $_[0] < 0 ? 0 : $_[0] }
 
-my @updown_points = ( 0, 4, 8, 17, 20, 23, 33, 39, 65, 69, 72, 97, 105, 108, 120 );
+my @updown_points = ( 2, 6, 10, 19, 22, 25, 35, 41, 67, 71, 74, 99, 107, 110, 122 );
 
-my @expected = ((map { [ $_,  clamp($_ - 23) ] } @updown_points), [ 120, 101 ]);
+my @expected = ((map { [ $_,  clamp($_ - 23) ] } @updown_points), [ 122, 103 ]);
 my @got = map { my $x = [ $s->_cursor, $s->_first_line ]; $s->update(down); $x } (1 .. 1+@updown_points);
 eq_or_diff(\@got, \@expected, 'Cursor down works all the way');
 
-@expected = map { [ $_, $_ < 101 ? $_ : 101 ] } reverse @updown_points;
+@expected = map { [ $_, $_ < 103 ? $_ : 103 ] } reverse @updown_points;
 @got = map { my $x = [ $s->_cursor, $s->_first_line ]; $s->update(up); $x } (1 .. @updown_points);
 eq_or_diff(\@got, \@expected, 'Cursor up works all the way');
 
-my @pgup_points = ( 0, 33, 65, 97, 120 );
-@expected = ((map { [ $_,  clamp($_ - 23) ] } @pgup_points), [ 120, 101 ]);
+my @pgup_points = ( 2, 35, 67, 99, 122 );
+@expected = ((map { [ $_,  clamp($_ - 23) ] } @pgup_points), [ 122, 103 ]);
 @got = map { my $x = [ $s->_cursor, $s->_first_line ]; $s->update(pgdn); $x } (1 .. 1+@pgup_points);
 eq_or_diff(\@got, \@expected, 'Cursor pgdn works all the way');
 
-my @pgdn_points = ( 120, 72, 39, 8, 0 );
-@expected = map { [ $_, $_ < 101 ? $_ : 101 ] } @pgdn_points;
+my @pgdn_points = ( 122, 74, 41, 10, 2 );
+@expected = map { [ $_, $_ < 103 ? $_ : 103 ] } @pgdn_points;
 @got = map { my $x = [ $s->_cursor, $s->_first_line ]; $s->update(pgup); $x } (1 .. @pgdn_points);
 eq_or_diff(\@got, \@expected, 'Cursor pgup works all the way');
 
@@ -108,14 +108,14 @@ sub check_ui_line {
         [ $color, $prefix . ' ' . $s->ui->selector->line($line_no)->text ],
             "$color line drawn ok");
 }
-check_ui_line(0, cursor_selected => '#');
-check_ui_line(1, unselectable => ' ');
-check_ui_line(4, selectable_selected => '#');
+check_ui_line(2, cursor_selected => '#');
+check_ui_line(3, unselectable => ' ');
+check_ui_line(6, selectable_selected => '#');
 
 $s->update('A');
 $s->draw();
-check_ui_line(0, cursor_unselected => '.');
-check_ui_line(4, selectable_unselected => '.');
+check_ui_line(2, cursor_unselected => '.');
+check_ui_line(6, selectable_unselected => '.');
 
 $s->update('h');
 is($s->ui->{mode}, 'Help', 'Help mode activated ok');
@@ -180,15 +180,17 @@ sub mock_ui {
 }
 
 __DATA__
-bin/uselect                                                     line 0 / 1
+00: This line should not be selectable
+
+bin/uselect                                                     line 2 / 1
 20:    "help|h|?"          => sub { pod2usage(0) },
 22:    "version|v"         => sub {
 
-lib/App/USelect/Selector/Line.pm                                line 4 / 2
+lib/App/USelect/Selector/Line.pm                                line 6 / 2
 17:sub is_selected { 0 }
 19:sub can_select {
 
-lib/App/USelect/Selector.pm                                     line 8 / 3
+lib/App/USelect/Selector.pm                                     line 10 / 3
 42:sub _build__lines {
 44:    my $build_line = sub {
 53:sub selectable_lines {
@@ -197,13 +199,13 @@ lib/App/USelect/Selector.pm                                     line 8 / 3
 60:    return $self->_grep(sub { $_->is_selected });
 63:sub next_selectable {
 
-lib/App/USelect/UI/Curses/Color/Solarized.pm                    line 17 / 4
+lib/App/USelect/UI/Curses/Color/Solarized.pm                    line 19 / 4
 41:sub solarized_color {
 
-lib/App/USelect/UI/Curses/Color.pm                              line 20 / 5
+lib/App/USelect/UI/Curses/Color.pm                              line 22 / 5
 17:sub curses_color {
 
-lib/App/USelect/UI/Curses/Keys.pm                               line 23 / 6
+lib/App/USelect/UI/Curses/Keys.pm                               line 25 / 6
 16:sub esc     { chr(27)   }
 17:sub enter   { "\n"      }
 18:sub up      { KEY_UP    }
@@ -213,13 +215,13 @@ lib/App/USelect/UI/Curses/Keys.pm                               line 23 / 6
 23:sub ctrl {
 40:sub key_name {
 
-lib/App/USelect/UI/Curses/Mode/Help.pm                          line 33 / 7
+lib/App/USelect/UI/Curses/Mode/Help.pm                          line 35 / 7
 22:sub _build__command_table {
 25:            code => sub { shift->ui->pop_mode },
 32:sub draw {
 43:sub get_status_text {
 
-lib/App/USelect/UI/Curses/Mode/Select.pm                        line 39 / 8
+lib/App/USelect/UI/Curses/Mode/Select.pm                        line 41 / 8
 26:    default => sub { shift->ui->selector },
 35:sub _set_cursor {
 41:sub _build__command_table {
@@ -245,14 +247,14 @@ lib/App/USelect/UI/Curses/Mode/Select.pm                        line 39 / 8
 236:sub get_status_text {
 250:sub _build__help_items {
 
-lib/App/USelect/UI/Curses/Mode.pm                               line 65 / 9
+lib/App/USelect/UI/Curses/Mode.pm                               line 67 / 9
 36:sub _build__key_dispatch_table {
 52:sub update {
 
-lib/App/USelect/UI/Curses/ModeHelp.pm                           line 69 / 10
+lib/App/USelect/UI/Curses/ModeHelp.pm                           line 71 / 10
 29:sub _build_help_text {
 
-lib/App/USelect/UI/Curses.pm                                    line 72 / 11
+lib/App/USelect/UI/Curses.pm                                    line 74 / 11
 39:    default => sub { [ shift->_new_mode('Select') ] },
 42:sub _new_mode {
 49:sub push_mode {
@@ -277,7 +279,7 @@ lib/App/USelect/UI/Curses.pm                                    line 72 / 11
 223:sub _attach_console {
 233:sub _detach_console {
 
-lib/App/USelect.pm                                              line 97 / 12
+lib/App/USelect.pm                                              line 99 / 12
 16:sub run {
 19:    my $select_sub = _make_select_sub($opt)
 25:            is_selectable => $select_sub,
@@ -285,10 +287,10 @@ lib/App/USelect.pm                                              line 97 / 12
 68:    my $select_sub = eval('sub { $_ = shift; ' . $opt->{select_code} . '}'); ## no critic ProhibitStringyEval
 74:    return $select_sub;
 
-t/selector.t                                                    line 105 / 13
+t/selector.t                                                    line 107 / 13
 17:sub is_selectable {
 
-t/ui_curses_mode.t                                              line 108 / 14
+t/ui_curses_mode.t                                              line 110 / 14
 20:    sub draw { shift->last_command('draw') }
 21:    sub get_status_text { shift->last_command('get_status_text') }
 22:    sub _build__command_table {
@@ -300,7 +302,7 @@ t/ui_curses_mode.t                                              line 108 / 14
 65:                code => sub { },
 69:                code => sub { },
 
-t/ui_curses_mode_select.t                                       line 120 / 15
+t/ui_curses_mode_select.t                                       line 122 / 15
 24:    sub selector { shift->{selector} }
 25:    sub new {
 31:sub mock_ui {
