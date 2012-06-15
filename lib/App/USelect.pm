@@ -52,8 +52,11 @@ sub _make_select_sub {
 
     # Try evaluating the user code on its own first - we can tailor a better
     # error message this way.
-    local $_ = ''; # silence warnings about $_ being uninitialised
-    my $usercode = eval($opt->{select_code}); ## no critic ProhibitStringyEval
+    {
+        local $_ = ''; # silence warnings about $_ being uninitialised
+        no strict 'vars';
+        eval($opt->{select_code}); ## no critic ProhibitStringyEval
+    }
     if ($@) {
         # Attempt to replace the default error message with something more
         # contextual. Not sure how robust this is.
@@ -67,7 +70,7 @@ sub _make_select_sub {
         $opt->{select_code} = '/\S/ and (' . $opt->{select_code} . ')';
     }
 
-    my $select_sub = eval('sub { $_ = shift; ' . $opt->{select_code} . '}'); ## no critic ProhibitStringyEval
+    my $select_sub = eval(q<no strict 'vars'; sub { $_ = shift; > . $opt->{select_code} . '}'); ## no critic ProhibitStringyEval
     if ($@) {
         print STDERR $@;
         return;
