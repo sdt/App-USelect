@@ -54,6 +54,7 @@ sub _make_select_sub {
     # error message this way.
     {
         local $_ = ''; # silence warnings about $_ being uninitialised
+        local $. = 0;  # ... and $.
         no strict 'vars';
         eval($opt->{select_code}); ## no critic ProhibitStringyEval
     }

@@ -46,7 +46,8 @@ sub _build__lines {
                 ?  App::USelect::Selector::SelectableLine->new(text => $text)
                 :  App::USelect::Selector::Line->new(text => $text);
     };
-    return [ map { $build_line->($_) } @{ $self->_text } ];
+    my $line_number = 0;
+    return [ map { local $. = ++$line_number; $build_line->($_) } @{ $self->_text } ];
 }
 
 sub selectable_lines {
