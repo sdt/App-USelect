@@ -14,6 +14,8 @@ use Curses qw();
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
+use App::USelect::Config;
+use App::USelect::UI::Curses::Color         qw( get_color );
 use App::USelect::UI::Curses::Mode::Help;
 use App::USelect::UI::Curses::Mode::Select;
 
@@ -95,6 +97,12 @@ has _exit_requested => (
 
 );
 
+has _colorscheme => (
+    is => 'rw',
+    isa => 'HashRef',
+    init_arg => undef,
+);
+
 sub run {
     my ($self) = shift;
 
@@ -119,23 +127,29 @@ sub _draw {
     $self->_post_draw();
 }
 
-my %color_table = (
-    cursor_selected         =>  'green,base02',
-    cursor_unselected       =>  'base1,base02',
-    selectable_selected     =>  'green,transp',
-    selectable_unselected   =>  'base0,transp',
-    unselectable            =>  'base01,transp',
-    status                  =>  'base1,base02',
-    help                    =>  'transp,transp',
-);
-
 sub _color {
-    my ($name) = @_;
+    my ($self, $name) = @_;
 
-    my $color = $color_table{$name}
+    my $color = $self->_colorscheme->{$name}
         or die "Unknown color $name";
 
     return get_color($color);
+}
+
+sub _set_colorscheme {
+    my ($self) = @_;
+    my $scheme;
+    if (Curses::has_colors) {
+        $scheme = App::USelect::Config::get->{_}->{colorscheme};
+        if (not $scheme or
+            not App::USelect::Config::get->{"colorscheme/$scheme"}) {
+            $scheme = 'color';
+        }
+    }
+    else {
+        $scheme = 'mono';
+    }
+    $self->_colorscheme(App::USelect::Config::get->{"colorscheme/$scheme"});
 }
 
 sub _pre_run {
@@ -148,6 +162,7 @@ sub _pre_run {
     Curses::use_default_colors;
     Curses::start_color;
     Curses::keypad(1);
+    $self->_set_colorscheme;
     $self->_update_size;
     $self->_exit_requested(0);
 }
@@ -194,7 +209,7 @@ sub move_cursor_to {
 sub print_line {
     my ($self, $x, $y, $color, $str) = @_;
 
-    my $attr = _color($color);
+    my $attr = $self->_color($color);
     my $old_attr = Curses::attron($attr);
 
     my ($h, $w); Curses::getmaxyx($h, $w);
