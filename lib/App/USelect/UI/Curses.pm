@@ -14,7 +14,6 @@ use Curses qw();
 use Text::Tabs qw( expand );
 use Try::Tiny;
 
-use App::USelect::UI::Curses::Color::Solarized qw( solarized_color );
 use App::USelect::UI::Curses::Mode::Help;
 use App::USelect::UI::Curses::Mode::Select;
 
@@ -121,22 +120,22 @@ sub _draw {
 }
 
 my %color_table = (
-    cursor_selected         =>  'green/base02',
-    cursor_unselected       =>  'base1/base02',
-    selectable_selected     =>  'green/transp',
-    selectable_unselected   =>  'base0/transp',
-    unselectable            =>  'base01/transp',
-    status                  =>  'base1/base02',
-    help                    =>  'transp/transp',
+    cursor_selected         =>  'green,base02',
+    cursor_unselected       =>  'base1,base02',
+    selectable_selected     =>  'green,transp',
+    selectable_unselected   =>  'base0,transp',
+    unselectable            =>  'base01,transp',
+    status                  =>  'base1,base02',
+    help                    =>  'transp,transp',
 );
 
 sub _color {
     my ($name) = @_;
 
-    my $solarized_color = $color_table{$name}
+    my $color = $color_table{$name}
         or die "Unknown color $name";
 
-    return solarized_color($solarized_color);
+    return get_color($color);
 }
 
 sub _pre_run {
