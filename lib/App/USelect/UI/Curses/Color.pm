@@ -19,6 +19,8 @@ use Curses qw(
 use parent 'Exporter';
 our @EXPORT_OK = qw( get_color );
 
+use constant COLOR_DEFAULT => -1;
+
 # Cache and init colors on demand
 my %curses_colorpair_table;
 sub _color_pair {
@@ -35,7 +37,6 @@ sub _color_pair {
     return $curses_colorpair_table{$key} = COLOR_PAIR($index);
 }
 
-sub COLOR_DEFAULT { -1 };
 
 my %color_names = (
 

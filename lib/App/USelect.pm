@@ -55,7 +55,7 @@ sub _make_select_sub {
     {
         local $_ = ''; # silence warnings about $_ being uninitialised
         local $. = 0;  # ... and $.
-        no strict 'vars';
+        no strict 'vars'; ## no critic ProhibitProlongedStrictureOverride
         eval($opt->{select_code}); ## no critic ProhibitStringyEval
     }
     if ($@) {
