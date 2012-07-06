@@ -61,21 +61,19 @@ Converts a key (eg. d) into its corresponding control-key keycode.
 
 =over
 
-=item esc
+=item * esc
 
-=item enter
+=item * enter
 
-=item up
+=item * up
 
-=item down
+=item * down
 
-=item pgup
+=item * pgup
 
-=item pgdn
+=item * pgdn
 
-=item ctrl
-
-=item key_name
+=item * ctrl
 
 =back
 
