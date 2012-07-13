@@ -66,3 +66,31 @@ sub get {
 }
 
 1;
+
+__END__
+
+=head1 FUNCTIONS
+
+=head2 get
+
+Load the config and return as a hash-of-hashes. Config is cached between calls,
+use C<reset> to clear the cache.
+
+Uses L<Config::Tiny> to read the config.
+
+The following locations are tried in order until one succeeds.
+
+=over
+
+=item * $ENV{USELECTRC}
+
+=item * ~/.uselectrc
+
+=back
+
+=head2 reset
+
+Clear the cached config so that the next call to C<get> will return a fresh
+config.
+
+=cut
