@@ -36,23 +36,22 @@ class Selector:
 
 	def __init__(self, line_wanted, text_lines):
 		self.x = 1;
-		self.lines = [];
+		self.lines = map(lambda t: Line(t, line_wanted(t)), text_lines);
 
-		for text in text_lines:
-			self.lines.append(Line(text, line_wanted(text)));
+		line_count = len(self.lines);
 
 		prev_selectable = None;
-		for line in self.lines:
+		for i, line in enumerate(self.lines):
 			line.prev_selectable = prev_selectable;
 			if line.can_select:
-				prev_selectable = self.lines.index(line);
+				prev_selectable = i;
 		self.last_selectable = prev_selectable;
 
 		next_selectable = None;
-		for line in reversed(self.lines):
+		for j, line in enumerate(reversed(self.lines)):
 			line.next_selectable = next_selectable;
 			if line.can_select:
-				next_selectable = self.lines.index(line);
+				next_selectable = line_count - j - 1;
 		self.first_selectable = next_selectable;
 
 	def next_selectable(self, line, dirn):
