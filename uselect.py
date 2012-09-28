@@ -81,6 +81,21 @@ class UI:
 		window.keypad(1);
 		self._update_size();
 		self._exit_requested = 0;
+		self._next_color_pair = 1;
+		self._color_table = {
+			'cursor_selected':
+				self._make_color(curses.COLOR_RED, curses.COLOR_BLUE, curses.A_REVERSE),
+			'cursor_selectable':
+				self._make_color(curses.COLOR_YELLOW, curses.COLOR_BLUE, curses.A_REVERSE),
+			'cursor_unselectable':
+				self._make_color(curses.COLOR_WHITE, curses.COLOR_BLUE, curses.A_REVERSE),
+			'nocursor_selected':
+				self._make_color(curses.COLOR_RED, 0, 0),
+			'nocursor_selectable':
+				self._make_color(curses.COLOR_YELLOW, 0, 0),
+			'nocursor_unselectable':
+				self._make_color(curses.COLOR_WHITE, 0, 0),
+		};
 
 	# Is this necessary in the presence of curses.wrapper?
 	def _deinit_curses(self):
@@ -119,16 +134,19 @@ class UI:
 
 	def _draw_line(self, y, line_no):
 		line = self.selector.lines[line_no];
-		attr = 0
 		prefix = '  ';
-		if line_no == self.cursor:
-			attr |= curses.A_REVERSE;
+		color = 'cursor_';
+		if line_no != self.cursor:
+			color = 'no' + color;
 		if line.is_selected:
-			attr |= curses.A_BOLD;
+			color = color + 'selected';
 			prefix = '* ';
 		elif line.can_select:
+			color = color + 'selectable';
 			prefix = '. ';
-		self.window.attrset(attr);
+		else:
+			color = color + 'unselectable';
+		self._set_color(color);
 		self.window.addstr(y, 2, prefix + line.text);
 
 	def _update(self):
@@ -187,6 +205,15 @@ class UI:
 
 	def _update_size(self):
 		self.height, self.width = self.window.getmaxyx();
+
+	def _make_color(self, fg, bg, attr):
+		pair = self._next_color_pair;
+		self._next_color_pair += 1;
+		curses.init_pair(pair, fg, bg);
+		return attr | curses.color_pair(pair);
+
+	def _set_color(self, name):
+		self.window.attrset(self._color_table[name]);
 
 #------------------------------------------------------------------------------
 def make_wanted(pattern):
