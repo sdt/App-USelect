@@ -69,6 +69,40 @@ class Selector:
 #------------------------------------------------------------------------------
 class UI:
 
+	color_name = {
+		'black':     curses.COLOR_BLACK,
+		'white':     curses.COLOR_WHITE,
+		'red':       curses.COLOR_RED,
+		'yellow':    curses.COLOR_YELLOW,
+		'green':     curses.COLOR_GREEN,
+		'cyan':      curses.COLOR_CYAN,
+		'blue':      curses.COLOR_BLUE,
+		'magenta':   curses.COLOR_MAGENTA,
+		'default':   0,
+		'':          0,
+		None:        0,
+	};
+
+	attr_name = {
+		'blink':     curses.A_BLINK,
+		'bold':      curses.A_BOLD,
+		'dim':       curses.A_DIM,
+		'reverse':   curses.A_REVERSE,
+		'standout':  curses.A_STANDOUT,
+		'underline': curses.A_UNDERLINE,
+		'':		 	 0,
+		None:		 0,
+	};
+
+	colors = {
+		'cursor_selected': 'red,blue,reverse',
+		'cursor_selectable': 'yellow,blue,reverse',
+		'cursor_unselectable': 'white,blue,reverse',
+		'nocursor_selected': 'red',
+		'nocursor_selectable': 'blue',
+		'nocursor_unselectable': 'white',
+	};
+
 	def __init__(self, selector):
 		self.selector = selector;
 
@@ -82,20 +116,9 @@ class UI:
 		self._update_size();
 		self._exit_requested = 0;
 		self._next_color_pair = 1;
-		self._color_table = {
-			'cursor_selected':
-				self._make_color(curses.COLOR_RED, curses.COLOR_BLUE, curses.A_REVERSE),
-			'cursor_selectable':
-				self._make_color(curses.COLOR_YELLOW, curses.COLOR_BLUE, curses.A_REVERSE),
-			'cursor_unselectable':
-				self._make_color(curses.COLOR_WHITE, curses.COLOR_BLUE, curses.A_REVERSE),
-			'nocursor_selected':
-				self._make_color(curses.COLOR_RED, 0, 0),
-			'nocursor_selectable':
-				self._make_color(curses.COLOR_YELLOW, 0, 0),
-			'nocursor_unselectable':
-				self._make_color(curses.COLOR_WHITE, 0, 0),
-		};
+		self._color_table = {};
+		for k,v in UI.colors.iteritems():
+			self._color_table[k] = self._parse_color(v);
 
 	# Is this necessary in the presence of curses.wrapper?
 	def _deinit_curses(self):
@@ -205,6 +228,15 @@ class UI:
 
 	def _update_size(self):
 		self.height, self.width = self.window.getmaxyx();
+
+	def _parse_color(self, color):
+		components = color.split(',');
+		while len(components) < 3:
+			components.append('');
+		return self._make_color(
+			self.color_name[components[0]],
+			self.color_name[components[1]],
+			self.attr_name[components[2]]);
 
 	def _make_color(self, fg, bg, attr):
 		pair = self._next_color_pair;
