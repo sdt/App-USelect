@@ -70,17 +70,29 @@ class Selector:
 class UI:
 
 	color_name = {
-		'black':     curses.COLOR_BLACK,
-		'white':     curses.COLOR_WHITE,
-		'red':       curses.COLOR_RED,
-		'yellow':    curses.COLOR_YELLOW,
-		'green':     curses.COLOR_GREEN,
-		'cyan':      curses.COLOR_CYAN,
-		'blue':      curses.COLOR_BLUE,
-		'magenta':   curses.COLOR_MAGENTA,
-		'default':   0,
-		'':          0,
-		None:        0,
+		'black':     [ curses.COLOR_BLACK,   0 ],
+		'white':     [ curses.COLOR_WHITE,   0 ],
+		'red':       [ curses.COLOR_RED,     0 ],
+		'yellow':    [ curses.COLOR_YELLOW,  0 ],
+		'green':     [ curses.COLOR_GREEN,   0 ],
+		'cyan':      [ curses.COLOR_CYAN,    0 ],
+		'blue':      [ curses.COLOR_BLUE,    0 ],
+		'magenta':   [ curses.COLOR_MAGENTA, 0 ],
+
+		'base02':    [ curses.COLOR_BLACK,   0 ],
+		'base2':     [ curses.COLOR_WHITE,   0 ],
+		'base03':    [ curses.COLOR_BLACK,   curses.A_BOLD ],
+		'base01':    [ curses.COLOR_GREEN,   curses.A_BOLD ],
+		'base00':    [ curses.COLOR_YELLOW,  curses.A_BOLD ],
+		'base0':     [ curses.COLOR_BLUE,    curses.A_BOLD ],
+		'base1':     [ curses.COLOR_CYAN,    curses.A_BOLD ],
+		'base3':     [ curses.COLOR_WHITE,   curses.A_BOLD ],
+		'orange':    [ curses.COLOR_RED,     curses.A_BOLD ],
+		'violet':    [ curses.COLOR_MAGENTA, curses.A_BOLD ],
+
+		'default':   [ 0, 0 ],
+		'':          [ 0, 0 ],
+		None:        [ 0, 0 ],
 	};
 
 	attr_name = {
@@ -95,12 +107,12 @@ class UI:
 	};
 
 	colors = {
-		'cursor_selected': 'red,blue,reverse',
-		'cursor_selectable': 'yellow,blue,reverse',
-		'cursor_unselectable': 'white,blue,reverse',
-		'nocursor_selected': 'red',
-		'nocursor_selectable': 'blue',
-		'nocursor_unselectable': 'white',
+		'cursor_selected': 'green,base02',
+		'cursor_selectable': 'base1,base02',
+		'cursor_unselectable': 'base1,base02',
+		'nocursor_selected': 'green',
+		'nocursor_selectable': 'base0',
+		'nocursor_unselectable': 'base01',
 	};
 
 	def __init__(self, selector):
@@ -163,14 +175,14 @@ class UI:
 			color = 'no' + color;
 		if line.is_selected:
 			color = color + 'selected';
-			prefix = '* ';
+			prefix = '# ';
 		elif line.can_select:
 			color = color + 'selectable';
 			prefix = '. ';
 		else:
 			color = color + 'unselectable';
 		self._set_color(color);
-		self.window.addstr(y, 2, prefix + line.text);
+		self.window.addstr(y, 0, prefix + line.text);
 
 	def _update(self):
 		key = self.window.getch();
@@ -231,12 +243,19 @@ class UI:
 
 	def _parse_color(self, color):
 		components = color.split(',');
-		while len(components) < 3:
-			components.append('');
-		return self._make_color(
-			self.color_name[components[0]],
-			self.color_name[components[1]],
-			self.attr_name[components[2]]);
+		fg, bg, attr = (0, -1, 0);
+		n = len(components);
+		if (n >= 1):
+			c = self.color_name[components[0]];
+			fg    = c[0];
+			attr |= c[1];
+		if (n >= 2):
+			c = self.color_name[components[1]];
+			bg    = c[0];
+			attr |= c[1];
+		if (n >= 3):
+			attr |= self.attr_name[components[2]];
+		return self._make_color(fg, bg, attr);
 
 	def _make_color(self, fg, bg, attr):
 		pair = self._next_color_pair;
