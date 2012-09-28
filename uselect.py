@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 
 import curses;
+import itertools;
 import os;
 import re;
 import sys;
@@ -135,7 +136,9 @@ class UI:
 		line = self.selector.lines[self.cursor];
 
 		if key == ord('\n'):
-			if len(filter(lambda line: line.is_selected, self.selector.lines)) == 0:
+			# If there are no selected lines, select this one
+			# (sounds wrong, but feels quite natural in practice)
+			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.lines), None) == None:
 				line.is_selected = 1;
 			self._exit_requested = 1;
 		elif key == ord('q'):
